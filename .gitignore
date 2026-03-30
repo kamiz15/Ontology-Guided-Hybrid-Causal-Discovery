@@ -1,4 +1,13 @@
+# Data files
+data/
+*.csv
+*.xlsx
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
-outputs/
+.env
+
+# Reports (optional - you may want these tracked)
+# reports/
