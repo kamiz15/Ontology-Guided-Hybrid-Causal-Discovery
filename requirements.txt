@@ -1,0 +1,6 @@
+rdflib
+scipy
+pandas
+numpy
+gcastle
+cdt
