@@ -8,7 +8,7 @@
 import os
 
 # ── Paths ────────────────────────────────────────────────────
-RAW_DATA_PATH       = "data/raw/esg_raw.csv"          # supervisor data goes here
+RAW_DATA_PATH       = "data/raw/df_asst_bnk_ecb.xlsx" # supervisor data goes here
 CLEAN_DATA_PATH     = "data/processed/data_clean.csv"
 READY_DATA_PATH     = "data/processed/data_ready.csv"
 COLUMN_MAPPING_PATH = "data/processed/column_mapping.csv"
@@ -26,6 +26,11 @@ NEAR_CONSTANT_STD_RATIO  = 0.01  # flag if std < 1% of mean
 # Add any column that is an identifier, timestamp, or
 # administrative field that should never be a causal variable.
 METADATA_COLS = [
+    "no",
+    "lei_mfi_code_for_branches",
+    "type",
+    "banks",
+    "ground_for_significance",
     "incorporation_year",
     "ipo_year",
     "reporting_year",

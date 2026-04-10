@@ -40,6 +40,9 @@ KNOWN_MAPPINGS = {
     "green_buildings_area":          ("Environmental", "Indicator",            "m²/%",          "candidate cause",  "Physical infrastructure driver"),
     "resource_efficiency_index":     ("Environmental", "ESG_Metric",           "0-100",         "candidate effect", "Composite efficiency score"),
     "total_energy_consumption":      ("Environmental", "ESG_Metric",           "kWh/GJ",        "candidate effect", "Downstream of energy mix decisions"),
+    "scope_1_ghg_emissions":         ("Environmental", "ESG_Metric",           "tCO2e",         "candidate effect", "Direct emissions outcome"),
+    "scope_2_ghg_emissions":         ("Environmental", "ESG_Metric",           "tCO2e",         "candidate effect", "Purchased energy emissions outcome"),
+    "scope_3_ghg_emissions":         ("Environmental", "ESG_Metric",           "tCO2e",         "candidate effect", "Value-chain emissions outcome"),
     "renewable_energy_share":        ("Environmental", "Indicator",            "%",             "candidate cause",  "Energy mix driver"),
     "hazardous_waste_generated":     ("Environmental", "ESG_Metric",           "kg/ton",        "candidate effect", "Industrial process output"),
     "recyclable_packaging_share":    ("Environmental", "Indicator",            "%",             "candidate cause",  "Packaging decision driver"),
@@ -61,6 +64,8 @@ KNOWN_MAPPINGS = {
     "hiv_program_coverage":          ("Social",        "Indicator",            "%",             "candidate cause",  "Health programme driver"),
     "human_rights_violations":       ("Social",        "ESG_Metric",           "count",         "candidate effect", "Compliance failure outcome"),
     "diversity_representation":      ("Social",        "Indicator",            "%",             "candidate cause",  "Workforce composition driver"),
+    "diversity_women_representation":("Social",        "Indicator",            "%",             "candidate cause",  "Gender diversity and representation driver"),
+    "health_safety":                 ("Social",        "Indicator",            "mixed",         "candidate cause",  "Workplace health and safety programme indicator"),
     "child_labor_compliance":        ("Social",        "Indicator",            "bool",          "candidate cause",  "Supply chain compliance driver"),
     "indigenous_consent_verification":("Social",       "Indicator",            "bool",          "candidate cause",  "Stakeholder engagement driver"),
     "access_to_services":            ("Social",        "ESG_Metric",           "%",             "candidate effect", "Community access outcome"),
@@ -82,6 +87,7 @@ KNOWN_MAPPINGS = {
     "esg_incentive_bonus":           ("Governance",    "Indicator",            "bool",          "candidate cause",  "Executive incentive structure driver"),
     "assurance_score":               ("Governance",    "ESG_Metric",           "0-100",         "candidate effect", "Third-party assurance outcome"),
     "green_financing":               ("Governance",    "ESG_Metric",           "Currency",      "candidate effect", "Green capital allocation outcome"),
+    "board_strategy_esg_oversight":  ("Governance",    "Indicator",            "mixed",         "candidate cause",  "Board-level ESG strategy and oversight driver"),
     "ceo_chair_split":               ("Governance",    "Indicator",            "bool",          "candidate cause",  "Board structure driver"),
     "auditor_independence_score":    ("Governance",    "PerformanceIndicator", "0-100",         "candidate cause",  "Audit quality driver"),
     "ethical_breaches":              ("Governance",    "ESG_Metric",           "count",         "candidate effect", "Compliance failure outcome"),
@@ -94,6 +100,7 @@ KNOWN_MAPPINGS = {
     "site_closure_plan":             ("Governance",    "Indicator",            "bool",          "candidate cause",  "Operational risk management driver"),
     "tax_transparency_reporting":    ("Governance",    "Indicator",            "bool",          "candidate cause",  "Fiscal governance driver"),
     "lobby_spending":                ("Governance",    "Indicator",            "Currency",      "candidate cause",  "Political influence driver"),
+    "reporting_quality":             ("Governance",    "ESG_Metric",           "mixed",         "candidate effect", "Disclosure quality outcome"),
     "systemic_risk_level":           ("Governance",    "ESG_Metric",           "Low/Med/High",  "candidate effect", "Composite risk outcome"),
     "military_connection_risk_head": ("Governance",    "Indicator",            "binary",        "candidate cause",  "Board-level governance risk"),
 
@@ -118,6 +125,7 @@ KNOWN_MAPPINGS = {
     "cash_ratio":                    ("Financial",     "Indicator",            "ratio",         "candidate cause",  "Liquidity driver"),
     "gross_sales":                   ("Financial",     "Indicator",            "Currency",      "candidate cause",  "Revenue driver"),
     "net_sales":                     ("Financial",     "Indicator",            "Currency",      "candidate cause",  "Revenue driver"),
+    "total_revenue":                 ("Financial",     "Indicator",            "Currency",      "candidate effect", "Reported revenue outcome"),
     "capital_expenditure":           ("Financial",     "Indicator",            "Currency",      "candidate cause",  "Investment driver"),
     "goodwill":                      ("Financial",     "Indicator",            "Currency",      "candidate cause",  "Intangible asset driver"),
     "retained_earnings":             ("Financial",     "Indicator",            "Currency",      "candidate effect", "Accumulated profit outcome"),
@@ -134,6 +142,7 @@ KNOWN_MAPPINGS = {
     "cash_holding":                  ("Financial",     "Indicator",            "Currency",      "candidate cause",  "Liquidity driver"),
     "dividend_payout_ratio":         ("Financial",     "Indicator",            "%",             "candidate effect", "Shareholder return outcome"),
     "dividend_per_share":            ("Financial",     "Indicator",            "Currency",      "candidate effect", "Dividend outcome"),
+    "sustainable_finance_green_financing": ("Financial", "ESG_Metric",         "Currency",      "candidate effect", "Green or sustainable financing outcome"),
 }
 
 

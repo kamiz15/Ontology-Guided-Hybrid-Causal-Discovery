@@ -1,127 +1,18 @@
 column_name,esg_domain,ontology_class,unit,causal_role,notes
-"LEI, MFI code for branches",REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-co2_ch4_n2o_scope_1_3,Environmental,ESG_Metric,tCO2e,candidate effect,Scope 1-3 GHG emissions
-carbon_intensity,Environmental,ESG_Metric,tCO2e/output,candidate effect,Derived from emissions + output — cannot cause its own inputs
+no,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
+lei_mfi_code_for_branches,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
+type,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
+banks,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
+ground_for_significance,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
+scope_1_ghg_emissions,Environmental,ESG_Metric,tCO2e,candidate effect,Direct emissions outcome
+scope_2_ghg_emissions,Environmental,ESG_Metric,tCO2e,candidate effect,Purchased energy emissions outcome
+scope_3_ghg_emissions,Environmental,ESG_Metric,tCO2e,candidate effect,Value-chain emissions outcome
 emission_reduction_policy,Environmental,Indicator,bool,candidate cause,Policy existence drives emission outcomes
-carbon_neutral_commitment,Environmental,Indicator,bool,candidate cause,Strategic commitment drives energy/emission decisions
-biodiversity_protection_actions,Environmental,Indicator,bool,candidate cause,Policy-level driver
-climate_risk_assessment_done,Environmental,Indicator,bool,candidate cause,Risk management input
-resilience_score,Environmental,ESG_Metric,0-100,candidate effect,Composite — derived from risk assessment
-environmental_fines,Environmental,ESG_Metric,Currency,candidate effect,Outcome of compliance failures
-iso_14001_exists,Environmental,Indicator,bool,candidate cause,Certification drives compliance outcomes
-reporting_quality_score,Environmental,ESG_Metric,0-100,candidate effect,Composite reporting quality
-green_product_revenue,Environmental,ESG_Metric,Currency/%,candidate effect,Outcome of green product strategy
-green_buildings_area,Environmental,Indicator,m²/%,candidate cause,Physical infrastructure driver
-resource_efficiency_index,Environmental,ESG_Metric,0-100,candidate effect,Composite efficiency score
-total_energy_consumption,Environmental,ESG_Metric,kWh/GJ,candidate effect,Downstream of energy mix decisions
 renewable_energy_share,Environmental,Indicator,%,candidate cause,Energy mix driver
-hazardous_waste_generated,Environmental,ESG_Metric,kg/ton,candidate effect,Industrial process output
-recyclable_packaging_share,Environmental,Indicator,%,candidate cause,Packaging decision driver
-waste_recycled_share,Environmental,Indicator,%,candidate cause,Waste management practice
-water_withdrawal,Environmental,ESG_Metric,m³,candidate effect,Resource consumption outcome
-collective_bargaining_coverage,Social,Indicator,%,candidate cause,Labour relations driver
-fair_wage_gap,Social,ESG_Metric,Currency,candidate effect,Pay equity outcome
 community_investment,Social,ESG_Metric,Currency,candidate effect,CSR spend outcome
-health_impact_score,Social,ESG_Metric,0-100,candidate effect,Composite health outcome
-csr_contribution,Social,ESG_Metric,Currency,candidate effect,CSR financial commitment
-customer_satisfaction_score,Social,ESG_Metric,0-100,candidate effect,Customer outcome metric
-hiv_program_coverage,Social,Indicator,%,candidate cause,Health programme driver
-human_rights_violations,Social,ESG_Metric,count,candidate effect,Compliance failure outcome
-diversity_representation,Social,Indicator,%,candidate cause,Workforce composition driver
-child_labor_compliance,Social,Indicator,bool,candidate cause,Supply chain compliance driver
-indigenous_consent_verification,Social,Indicator,bool,candidate cause,Stakeholder engagement driver
-access_to_services,Social,ESG_Metric,%,candidate effect,Community access outcome
-healthcare_access_employees,Social,Indicator,%,candidate cause,Employee benefit driver
-training_hours,Social,Indicator,hrs/employee,candidate cause,Workforce development driver
-turnover_rate,Social,ESG_Metric,%,candidate effect,Downstream of training + compensation
-injury_frequency_rate,Social,ESG_Metric,rate/100,candidate effect,Safety outcome — downstream of training
-contract_compliance,Social,Indicator,bool,candidate cause,Legal compliance driver
-union_membership,Social,Indicator,%,candidate cause,Labour relations driver
-product_safety_compliance,Social,Indicator,%,candidate cause,Product risk driver
-responsible_marketing_compliance,Social,Indicator,bool,candidate cause,Marketing governance driver
-supplier_audits,Social,Indicator,bool,candidate cause,Supply chain governance driver
-esg_oversight_policy,Governance,Indicator,bool,candidate cause,Board-level ESG governance driver
-board_diversity,Governance,PerformanceIndicator,%,candidate cause,Board composition driver
-governance_compliance_score,Governance,ESG_Metric,0-100,candidate effect,Composite — cannot cause its own inputs
-esg_incentive_bonus,Governance,Indicator,bool,candidate cause,Executive incentive structure driver
-assurance_score,Governance,ESG_Metric,0-100,candidate effect,Third-party assurance outcome
-green_financing,Governance,ESG_Metric,Currency,candidate effect,Green capital allocation outcome
-ceo_chair_split,Governance,Indicator,bool,candidate cause,Board structure driver
-auditor_independence_score,Governance,PerformanceIndicator,0-100,candidate cause,Audit quality driver
-ethical_breaches,Governance,ESG_Metric,count,candidate effect,Compliance failure outcome
-anti_competitive_violations,Governance,ESG_Metric,count,candidate effect,Regulatory failure outcome
-corruption_cases,Governance,ESG_Metric,count,candidate effect,Integrity failure outcome
-privacy_compliance,Governance,Indicator,bool,candidate cause,Data governance driver
-financial_inclusion,Governance,ESG_Metric,%,candidate effect,Stakeholder inclusion outcome
-global_compact_membership,Governance,Indicator,bool,candidate cause,UN commitment driver
-shareholder_rights_score,Governance,PerformanceIndicator,0-100,candidate cause,Investor rights driver
-tax_transparency_reporting,Governance,Indicator,bool,candidate cause,Fiscal governance driver
-lobby_spending,Governance,Indicator,Currency,candidate cause,Political influence driver
-systemic_risk_level,Governance,ESG_Metric,Low/Med/High,candidate effect,Composite risk outcome
-market_price_share,Financial,Indicator,Currency,candidate effect,Market price outcome
-market_value_equity,Financial,Indicator,Currency,candidate effect,Market valuation outcome
-majority_shareholder_shares,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-minority_shareholder_shares,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-outstanding_shares,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-largest_shareholder_pct,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-majority_shareholder_pct,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-minority_shareholder_pct,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-total_shares,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-asset_growth_pct,Financial,Indicator,%,candidate effect,Growth outcome
-capital_expenditure,Financial,Indicator,Currency,candidate cause,Investment driver
-cash_and_equivalent,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-cash_dividend,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-cash_holding,Financial,Indicator,Currency,candidate cause,Liquidity driver
-current_ratio,Financial,Indicator,ratio,candidate cause,Liquidity driver
-debt_to_equity_ratio,Financial,Indicator,ratio,candidate cause,Capital structure driver
-depreciation,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-dividend_payout_ratio,Financial,Indicator,%,candidate effect,Shareholder return outcome
-dividend_per_share,Financial,Indicator,Currency,candidate effect,Dividend outcome
-eps,Financial,Indicator,Currency,candidate effect,Earnings per share
-earnings_after_tax,Financial,Indicator,Currency,candidate effect,Net earnings outcome
-ebit,Financial,Indicator,Currency,candidate effect,Operating profit
-earnings_quality,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-financial_expenses,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-goodwill,Financial,Indicator,Currency,candidate cause,Intangible asset driver
-human_capital_cost,Financial,Indicator,Currency,candidate cause,Workforce investment driver
-income_tax,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-intangible_assets,Financial,Indicator,Currency,candidate cause,Innovation/brand asset driver
-ln_cash_equivalent,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-market_price_high,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-market_price_low,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-market_price_open,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-largest_shareholder_name,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-net_working_capital,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-pe_ratio,Financial,Indicator,ratio,candidate effect,Market pricing outcome
-reporting_currency,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-retained_earnings,Financial,Indicator,Currency,candidate effect,Accumulated profit outcome
-times_interest_earned,Financial,Indicator,ratio,candidate effect,Debt service capacity
-controlling_shareholder_info,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-incorporation_year,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-ipo_year,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-num_business_segments,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-num_employee,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-company_name,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-reporting_year,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-cash_ratio,Financial,Indicator,ratio,candidate cause,Liquidity driver
-debt_maturity,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-debt_to_asset_ratio,Financial,Indicator,ratio,candidate cause,Leverage driver
-eat_growth,Financial,Indicator,%,candidate effect,Earnings growth outcome
-net_cf_investing,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-net_cf_operating,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-net_profit_margin,Financial,Indicator,%,candidate effect,Bottom-line efficiency
-pbv,Financial,ESG_Metric,ratio,candidate effect,Price-to-book ratio
-quick_ratio,Financial,Indicator,ratio,candidate cause,Liquidity driver
-roa_eat,Financial,ESG_Metric,ratio,candidate effect,Return on assets
-solvency_ratio,Financial,Indicator,ratio,candidate cause,Long-term financial stability
-account_receivable,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-current_asset,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-current_liabilities,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-fixed_asset,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-lag_market_price,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-lag_total_asset,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-non_current_asset,REVIEW,REVIEW,REVIEW,REVIEW,Not in known mappings — fill in manually
-roe_eat,Financial,ESG_Metric,ratio,candidate effect,Equity performance outcome
-total_asset,Financial,Indicator,Currency,candidate cause,Firm size proxy
-total_debt,Financial,Indicator,Currency,candidate cause,Leverage driver
-total_equity,Financial,Indicator,Currency,candidate effect,Outcome of financial decisions
+diversity_women_representation,Social,Indicator,%,candidate cause,Gender diversity and representation driver
+health_safety,Social,Indicator,mixed,candidate cause,Workplace health and safety programme indicator
+board_strategy_esg_oversight,Governance,Indicator,mixed,candidate cause,Board-level ESG strategy and oversight driver
+sustainable_finance_green_financing,Financial,ESG_Metric,Currency,candidate effect,Green or sustainable financing outcome
+total_revenue,Financial,Indicator,Currency,candidate effect,Reported revenue outcome
+reporting_quality,Governance,ESG_Metric,mixed,candidate effect,Disclosure quality outcome

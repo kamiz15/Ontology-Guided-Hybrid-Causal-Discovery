@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
+import sys
 from config import RAW_DATA_PATH, AUDIT_REPORT_PATH
+from io_utils import load_tabular_dataset
 
-df = pd.read_csv(RAW_DATA_PATH)
+df = load_tabular_dataset(RAW_DATA_PATH)
 
 lines = []
 
@@ -30,7 +32,15 @@ for col in cat_cols:
     lines.append(f"{col}: {df[col].value_counts().to_dict()}")
 
 report = "\n".join(lines)
-print(report)
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, OSError):
+    pass
+
+try:
+    print(report)
+except UnicodeEncodeError:
+    print(report.encode("ascii", errors="ignore").decode("ascii"))
 
 with open(AUDIT_REPORT_PATH, "w", encoding="utf-8") as f:
     f.write(report)

@@ -30,6 +30,7 @@ from config import (
     HIGH_CORR_THRESHOLD,
     NEAR_CONSTANT_STD_RATIO,
 )
+from io_utils import load_tabular_dataset
 
 
 # ── Step A: Drop fully empty columns ─────────────────────────
@@ -120,7 +121,7 @@ def clean_dataset(input_path: str,
                   ready_path: str,
                   corr_path: str) -> pd.DataFrame:
 
-    df = pd.read_csv(input_path)
+    df = load_tabular_dataset(input_path)
     print(f"[clean] Input shape: {df.shape}")
 
     df = drop_empty_columns(df)

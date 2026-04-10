@@ -1,6 +1,7 @@
 rdflib
 scipy
 pandas
+openpyxl
 numpy
 gcastle
 cdt
