@@ -1,273 +1,285 @@
 # Ontology-Guided Hybrid Causal Discovery
 
-This project builds an ontology-guided causal discovery pipeline for ESG-style tabular data.
-It combines:
+This repository contains an ESG-focused causal discovery workflow built around one canonical banking workbook, ontology-style edge constraints, multiple causal discovery backends, optional Gemma-based reasoning, and a small exchange-rate helper pipeline for mixed-currency fields.
 
-- dataset auditing and cleaning
-- ontology-inspired forbidden and required edges
-- multiple causal discovery backends
-- graph export and visualization
-- optional LLM-based causal edge proposals
-
-The current default dataset is:
+The current default raw input is:
 
 - `data/raw/df_asst_bnk_ecb.xlsx`
 
-The current cleaner converts that workbook into a fully numeric causal-ready dataset with:
+The project is centered on the scripts in the repo root, with shared paths defined in [config.py](./config.py).
 
-- `110` rows
-- `12` modeled variables
+## What Is In The Repo Now
 
-## Current Pipeline
+- A standardized 01-09 causal discovery pipeline for the ECB workbook
+- An optional Gemma proposal step in [08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py)
+- A supplementary edge-evaluation step in [10_gemma_evaluate.py](./10_gemma_evaluate.py)
+- A one-command orchestrator in [run_all.py](./run_all.py)
+- A PowerShell environment bootstrap in [setup_venv.ps1](./setup_venv.ps1)
+- An exchange-rate extraction and currency-normalization helper workflow under [exchange_rates](./exchange_rates) and [check_del_after.py](./check_del_after.py)
+- Tracked reports, graphs, and figures under [reports](./reports) and [outputs](./outputs)
 
-The project currently uses these scripts:
+## Project Layout
 
-1. `01_audit.py`
-2. `02_clean.py`
-3. `03_build_column_mapping.py`
-4. `04_forbidden_edges.py`
-5. `05_run_baselines.py`
-6. `06_run_notears.py`
-7. `07_run_deci.py`
-8. `08_gemma_causal_proposals.py`
-9. `09_visualize_graphs.py`
-
-## What Each Step Does
-
-`01_audit.py`
-- reads the raw dataset
-- reports shape, dtypes, missingness, and categorical values
-- writes `reports/audit_report.txt`
-
-`02_clean.py`
-- supports `.csv`, `.xlsx`, and `.xls`
-- normalizes column names through `io_utils.py`
-- removes metadata/admin columns
-- coerces boolean-like and numeric-like object columns
-- encodes qualitative ESG fields to ordinal numeric scores
-- extracts numeric values from emissions, percentages, and financial-magnitude text
-- imputes remaining numeric missing values with the median
-- writes:
-  - `data/processed/data_clean.csv`
-  - `data/processed/data_ready.csv`
-  - `reports/high_correlation_pairs.csv`
-
-`03_build_column_mapping.py`
-- creates or refreshes `data/processed/column_mapping.csv`
-- fills known ontology/domain mappings
-- flags unmapped columns for manual review
-
-`04_forbidden_edges.py`
-- defines ontology-guided forbidden and required edges
-- exposes background knowledge for downstream constrained models
-
-`05_run_baselines.py`
-- runs:
-  - unconstrained PC
-  - unconstrained DirectLiNGAM
-  - constrained PC
-- writes adjacency CSVs, GML graphs, and updates `outputs/metrics/run_log.csv`
-
-`06_run_notears.py`
-- runs NOTEARS through gCastle
-- writes adjacency, weights, and graph outputs
-
-`07_run_deci.py`
-- runs DECI in unconstrained and constrained modes
-- currently falls back to a manual PyTorch implementation if `causica` is not installed
-- writes adjacency, edge probabilities, and graph outputs
-
-`08_gemma_causal_proposals.py`
-- queries Gemma to propose causal edges from variable descriptions
-- compares LLM-proposed edges to data-driven graphs
-- optional and backend-dependent
-
-`09_visualize_graphs.py`
-- reads adjacency CSVs
-- generates comparison figures in `outputs/figures`
-
-## Current Modeled Variables
-
-The current cleaned dataset keeps these 12 variables for causal discovery:
-
-- `scope_1_ghg_emissions`
-- `scope_2_ghg_emissions`
-- `scope_3_ghg_emissions`
-- `emission_reduction_policy`
-- `renewable_energy_share`
-- `community_investment`
-- `diversity_women_representation`
-- `health_safety`
-- `board_strategy_esg_oversight`
-- `sustainable_finance_green_financing`
-- `total_revenue`
-- `reporting_quality`
-
-This means the current graphs now include Environmental, Social, Governance, and Financial variables rather than only the environmental subset.
-
-## Repository Structure
-
-Key files:
-
-- [README.md](/c:/Users/User/Desktop/go/README.md)
-- [config.py](/c:/Users/User/Desktop/go/config.py)
-- [io_utils.py](/c:/Users/User/Desktop/go/io_utils.py)
-- [forbidden_edges.py](/c:/Users/User/Desktop/go/forbidden_edges.py)
-- [WEEK2_README.md](/c:/Users/User/Desktop/go/WEEK2_README.md)
-
-Key output folders:
-
-- `data/processed/`
-- `reports/`
-- `outputs/graphs/`
-- `outputs/metrics/`
-- `outputs/figures/`
-
-## Setup
-
-Base packages already listed in `requirements.txt`:
-
-```powershell
-python -m pip install -r requirements.txt
+```text
+go/
+|-- 01_audit.py
+|-- 02_clean.py
+|-- 03_build_column_mapping.py
+|-- 04_forbidden_edges.py
+|-- 05_run_baselines.py
+|-- 06_run_notears.py
+|-- 07_run_deci.py
+|-- 08_gemma_causal_proposals.py
+|-- 09_visualize_graphs.py
+|-- 10_gemma_evaluate.py
+|-- check_del_after.py
+|-- config.py
+|-- io_utils.py
+|-- run_all.py
+|-- setup_venv.ps1
+|-- requirements.txt
+|-- data/
+|   |-- raw/
+|   |   `-- df_asst_bnk_ecb.xlsx
+|   `-- processed/
+|       |-- data_clean.csv
+|       |-- data_ready.csv
+|       |-- column_mapping.csv
+|       `-- df_asst_bnk_ecb_processed.xlsx
+|-- docs/
+|   `-- WEEK2_README.md
+|-- exchange_rates/
+|   |-- exchange_rate_2025.pdf
+|   |-- ecb_rates_2025.csv
+|   `-- extract_ecb_rates.py
+|-- outputs/
+|   |-- figures/
+|   |-- gemma_eval/
+|   |-- graphs/
+|   `-- metrics/
+|-- reports/
+|   |-- audit_report.txt
+|   |-- gemma_causal_reasoning.txt
+|   `-- high_correlation_pairs.csv
+`-- scripts/
+    |-- check_del_after.py
+    `-- run_full_pipeline.ps1
 ```
 
-Additional packages used by the current scripts but not listed in `requirements.txt` should also be installed:
+## Quick Start
+
+Create and populate the project-local virtual environment:
 
 ```powershell
-python -m pip install causal-learn lingam networkx matplotlib scikit-learn torch
+.\setup_venv.ps1
+.\.venv\Scripts\Activate.ps1
 ```
 
-Optional packages:
+The checked-in [requirements.txt](./requirements.txt) covers the core pipeline dependencies, including:
+
+- `pandas`, `numpy`, `scipy`, `openpyxl`
+- `causal-learn`, `lingam`, `gcastle`, `cdt`
+- `networkx`, `matplotlib`, `pyvis`
+- `torch`, `transformers`
+- `pdfplumber`
+- `rdflib`
+
+Optional extras:
+
+- Google Gemma evaluation currently needs `google-genai`
+- Some `07_run_deci.py` paths may benefit from `causica`, but the script still has a fallback path when it is unavailable
+
+Install the Google client only if you plan to use the Google backend:
 
 ```powershell
-python -m pip install pyvis
-python -m pip install causica==0.4.5 --no-deps
+.\.venv\Scripts\python.exe -m pip install google-genai
+```
+
+## End-To-End Runs
+
+Run the main pipeline from the repo root:
+
+```powershell
+.\.venv\Scripts\python.exe run_all.py
+```
+
+Useful variants:
+
+```powershell
+.\.venv\Scripts\python.exe run_all.py --with-fx
+.\.venv\Scripts\python.exe run_all.py --with-gemma --gemma-backend ollama
+.\.venv\Scripts\python.exe run_all.py --with-gemma --gemma-backend google --gemma-model gemma-4-26b-a4b-it --gemma-api-key YOUR_KEY
+.\.venv\Scripts\python.exe run_all.py --epochs 200 --mode both
 ```
 
 Notes:
 
-- `openpyxl` is required for `.xlsx` input
-- `causica` is optional; without it, `07_run_deci.py` uses the built-in PyTorch fallback
-- `08_gemma_causal_proposals.py` needs a working Ollama, Google AI, or HuggingFace backend
+- [run_all.py](./run_all.py) automatically relaunches itself inside `.venv\Scripts\python.exe` when that interpreter exists
+- `--with-fx` runs the exchange-rate helper flow before the main modeling pipeline
+- `--with-gemma` adds the Gemma-backed steps
+- The Hugging Face backend is supported by [08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py), but [10_gemma_evaluate.py](./10_gemma_evaluate.py) currently supports only `ollama` and `google`, so `run_all.py` skips step 10 for `huggingface`
 
-## How To Run
-
-Run everything from the project root:
+If you only want the non-LLM pipeline, the repo also includes:
 
 ```powershell
-python 01_audit.py
-python 02_clean.py
-python 03_build_column_mapping.py
-python 04_forbidden_edges.py
-python 05_run_baselines.py
-python 06_run_notears.py
-python 07_run_deci.py --epochs 200 --mode both
-python 09_visualize_graphs.py
+powershell -ExecutionPolicy Bypass -File scripts/run_full_pipeline.ps1
 ```
 
-If your system uses `py` instead of `python`, replace accordingly.
+## Pipeline Steps
 
-## Current Default Data Paths
+- [01_audit.py](./01_audit.py): profiles the raw workbook and writes an audit report
+- [02_clean.py](./02_clean.py): cleans, scores, coerces, and imputes the raw ESG data into modeling-ready numeric outputs
+- [03_build_column_mapping.py](./03_build_column_mapping.py): creates the variable mapping used downstream
+- [04_forbidden_edges.py](./04_forbidden_edges.py): builds ontology-inspired edge constraints
+- [05_run_baselines.py](./05_run_baselines.py): runs PC and LiNGAM baselines
+- [06_run_notears.py](./06_run_notears.py): runs NOTEARS
+- [07_run_deci.py](./07_run_deci.py): runs DECI in constrained and unconstrained modes
+- [08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py): asks Gemma to propose plausible direct ESG causal edges
+- [09_visualize_graphs.py](./09_visualize_graphs.py): produces comparison figures and graph visuals
+- [10_gemma_evaluate.py](./10_gemma_evaluate.py): asks Gemma to qualitatively score discovered edges across the graph outputs
 
-Configured in [config.py](/c:/Users/User/Desktop/go/config.py):
+## Data And Processed Outputs
 
-- raw input: `data/raw/df_asst_bnk_ecb.xlsx`
-- clean output: `data/processed/data_clean.csv`
-- causal-ready output: `data/processed/data_ready.csv`
-- mapping file: `data/processed/column_mapping.csv`
-- audit report: `reports/audit_report.txt`
-- high-correlation report: `reports/high_correlation_pairs.csv`
+The repo is standardized around:
 
-## Main Outputs
+- raw input: [data/raw/df_asst_bnk_ecb.xlsx](./data/raw/df_asst_bnk_ecb.xlsx)
 
-Processed data:
+Main processed artifacts:
 
-- `data/processed/data_clean.csv`
-- `data/processed/data_ready.csv`
-- `data/processed/column_mapping.csv`
+- [data/processed/data_clean.csv](./data/processed/data_clean.csv)
+- [data/processed/data_ready.csv](./data/processed/data_ready.csv)
+- [data/processed/column_mapping.csv](./data/processed/column_mapping.csv)
+- [data/processed/df_asst_bnk_ecb_processed.xlsx](./data/processed/df_asst_bnk_ecb_processed.xlsx)
 
-Reports:
+The current cleaner keeps a compact causal-ready feature set and converts mixed raw workbook fields into consistently numeric modeling inputs for the downstream graph algorithms.
 
-- `reports/audit_report.txt`
-- `reports/high_correlation_pairs.csv`
+## Exchange-Rate Helper Workflow
 
-Graphs:
+The mixed-currency helper flow is kept separate from the main modeling pipeline so it can be rerun independently.
 
-- `outputs/graphs/unconstrained_pc_adjacency.csv`
-- `outputs/graphs/unconstrained_pc_graph.gml`
-- `outputs/graphs/unconstrained_lingam_adjacency.csv`
-- `outputs/graphs/unconstrained_lingam_weights.csv`
-- `outputs/graphs/unconstrained_lingam_graph.gml`
-- `outputs/graphs/constrained_pc_adjacency.csv`
-- `outputs/graphs/constrained_pc_graph.gml`
-- `outputs/graphs/notears_adjacency.csv`
-- `outputs/graphs/notears_weights.csv`
-- `outputs/graphs/notears_graph.gml`
-- `outputs/graphs/deci_unconstrained_adjacency.csv`
-- `outputs/graphs/deci_unconstrained_edge_probabilities.csv`
-- `outputs/graphs/deci_unconstrained_graph.gml`
-- `outputs/graphs/deci_constrained_adjacency.csv`
-- `outputs/graphs/deci_constrained_edge_probabilities.csv`
-- `outputs/graphs/deci_constrained_graph.gml`
+Step 1: extract ECB exchange rates from the PDF.
 
-Metrics and figures:
+```powershell
+.\.venv\Scripts\python.exe exchange_rates/extract_ecb_rates.py
+```
 
-- `outputs/metrics/run_log.csv`
-- `outputs/figures/comparison_grid.png`
-- `outputs/figures/jaccard_heatmap.png`
-- `outputs/figures/edge_count_comparison.png`
-- `outputs/figures/constraint_impact.png`
+Step 2: parse workbook money fields and write EUR-normalized helper columns.
 
-## Latest Full Run Snapshot
+```powershell
+.\.venv\Scripts\python.exe check_del_after.py
+```
 
-Latest full rerun on the current 12-variable dataset produced:
+Equivalent helper entry point:
 
-- Unconstrained PC: `16` edges
-- Constrained PC: `12` edges
-- DirectLiNGAM: `9` edges
-- NOTEARS: `7` edges
-- DECI unconstrained: `62` edges
-- DECI constrained: `66` edges
+```powershell
+.\.venv\Scripts\python.exe scripts/check_del_after.py
+```
 
-The constrained PC run removed `4` edges relative to unconstrained PC on the latest rerun.
+Main exchange-rate artifacts:
 
-## Constraints
+- [exchange_rates/exchange_rate_2025.pdf](./exchange_rates/exchange_rate_2025.pdf)
+- [exchange_rates/ecb_rates_2025.csv](./exchange_rates/ecb_rates_2025.csv)
+- [data/processed/df_asst_bnk_ecb_processed.xlsx](./data/processed/df_asst_bnk_ecb_processed.xlsx)
 
-The constrained models use ontology-guided prior knowledge from:
+## Gemma Workflows
 
-- [04_forbidden_edges.py](/c:/Users/User/Desktop/go/04_forbidden_edges.py)
-- [forbidden_edges.py](/c:/Users/User/Desktop/go/forbidden_edges.py)
+### 08. Causal Edge Proposals
 
-These currently encode domain-informed rules such as:
+[08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py) proposes direct ESG edges from variable descriptions and compares them with the algorithmic graphs.
 
-- emissions should not cause policy adoption
-- emissions should not drive board-level strategy
-- reporting quality should not cause core ESG performance variables
-- board ESG oversight should drive policy, reporting, and diversity outcomes
+Examples:
 
-## Current Known Limitations
+```powershell
+.\.venv\Scripts\python.exe 08_gemma_causal_proposals.py --backend ollama
+.\.venv\Scripts\python.exe 08_gemma_causal_proposals.py --backend google --api-key YOUR_KEY
+```
 
-`08_gemma_causal_proposals.py`
-- is not fully runnable by default in this environment yet
-- the latest attempt reached the Ollama endpoint but returned `HTTP 404`
-- that usually means the Ollama service is up but the requested model tag is not available locally
+Tracked outputs include:
 
-`07_run_deci.py`
-- currently runs through the built-in PyTorch fallback unless `causica` is installed
-- the fallback is useful for experimentation, but it is not the official Causica backend
+- [outputs/graphs/gemma_proposed_adjacency.csv](./outputs/graphs/gemma_proposed_adjacency.csv)
+- [outputs/graphs/gemma_proposed_edges.csv](./outputs/graphs/gemma_proposed_edges.csv)
+- [outputs/graphs/gemma_proposed_graph.gml](./outputs/graphs/gemma_proposed_graph.gml)
+- [reports/gemma_causal_reasoning.txt](./reports/gemma_causal_reasoning.txt)
 
-Financial text extraction
-- `02_clean.py` now keeps the finance-like text columns by extracting numeric magnitudes
-- mixed currencies are currently treated as comparable magnitudes, not normalized to a common currency
+### 10. Qualitative Edge Evaluation
 
-## Suggested Next Steps
+[10_gemma_evaluate.py](./10_gemma_evaluate.py) evaluates discovered edges by asking Gemma for:
 
-- normalize currency units if cross-country financial comparability matters
-- refine `08_gemma_causal_proposals.py` backend handling and model selection
-- evaluate whether the constrained DECI behavior should be tightened, since it is currently denser than unconstrained DECI
-- decide whether generated outputs in `outputs/` should remain version-controlled long term
+- whether any causal link is plausible
+- the most plausible relationship direction
+- a short mechanism
+- likely confounders
+- confidence
 
-## Git / Version Notes
+Examples:
 
-The repo currently tracks code plus selected generated outputs and figures.
-The raw input workbook itself is still ignored by `.gitignore`.
+```powershell
+.\.venv\Scripts\python.exe 10_gemma_evaluate.py --backend ollama
+.\.venv\Scripts\python.exe 10_gemma_evaluate.py --backend google --model gemma-4-26b-a4b-it --api-key YOUR_KEY
+.\.venv\Scripts\python.exe 10_gemma_evaluate.py --backend google --model gemma-4-26b-a4b-it --no-cache --delay 4.5 --max-edges 10
+```
+
+If you prefer an environment variable for Google:
+
+```powershell
+$env:GEMINI_API_KEY="YOUR_KEY"
+.\.venv\Scripts\python.exe 10_gemma_evaluate.py --backend google --model gemma-4-26b-a4b-it
+```
+
+Tracked evaluation outputs:
+
+- [outputs/gemma_eval/edge_scores.csv](./outputs/gemma_eval/edge_scores.csv)
+- [outputs/gemma_eval/model_summary.csv](./outputs/gemma_eval/model_summary.csv)
+- [outputs/gemma_eval/raw_responses.jsonl](./outputs/gemma_eval/raw_responses.jsonl)
+- [outputs/gemma_eval/cache.json](./outputs/gemma_eval/cache.json)
+- [outputs/gemma_eval/comparison.png](./outputs/gemma_eval/comparison.png)
+- [outputs/gemma_eval/distribution.png](./outputs/gemma_eval/distribution.png)
+
+This step is intended as a supplementary plausibility check, not as ground truth.
+
+## Graphs, Figures, And Reports
+
+Current tracked graph artifacts include:
+
+- [outputs/graphs/unconstrained_pc_graph.gml](./outputs/graphs/unconstrained_pc_graph.gml)
+- [outputs/graphs/constrained_pc_graph.gml](./outputs/graphs/constrained_pc_graph.gml)
+- [outputs/graphs/unconstrained_lingam_graph.gml](./outputs/graphs/unconstrained_lingam_graph.gml)
+- [outputs/graphs/notears_graph.gml](./outputs/graphs/notears_graph.gml)
+- [outputs/graphs/deci_unconstrained_graph.gml](./outputs/graphs/deci_unconstrained_graph.gml)
+- [outputs/graphs/deci_constrained_graph.gml](./outputs/graphs/deci_constrained_graph.gml)
+- [outputs/graphs/gemma_proposed_graph.gml](./outputs/graphs/gemma_proposed_graph.gml)
+
+Current tracked figures include:
+
+- [outputs/figures/comparison_grid.png](./outputs/figures/comparison_grid.png)
+- [outputs/figures/jaccard_heatmap.png](./outputs/figures/jaccard_heatmap.png)
+- [outputs/figures/edge_count_comparison.png](./outputs/figures/edge_count_comparison.png)
+- [outputs/figures/constraint_impact.png](./outputs/figures/constraint_impact.png)
+- [outputs/figures/network_unconstrained_pc.png](./outputs/figures/network_unconstrained_pc.png)
+- [outputs/figures/network_constrained_pc.png](./outputs/figures/network_constrained_pc.png)
+- [outputs/figures/network_unconstrained_lingam.png](./outputs/figures/network_unconstrained_lingam.png)
+- [outputs/figures/network_notears.png](./outputs/figures/network_notears.png)
+- [outputs/figures/network_deci_unconstrained.png](./outputs/figures/network_deci_unconstrained.png)
+- [outputs/figures/network_deci_constrained.png](./outputs/figures/network_deci_constrained.png)
+- [outputs/figures/network_gemma_proposed.png](./outputs/figures/network_gemma_proposed.png)
+
+Reports and diagnostics:
+
+- [reports/audit_report.txt](./reports/audit_report.txt)
+- [reports/high_correlation_pairs.csv](./reports/high_correlation_pairs.csv)
+- [reports/gemma_causal_reasoning.txt](./reports/gemma_causal_reasoning.txt)
+- [outputs/metrics/run_log.csv](./outputs/metrics/run_log.csv)
+
+## Supporting Files
+
+- [config.py](./config.py) is the single source of truth for default paths and output folders
+- [docs/WEEK2_README.md](./docs/WEEK2_README.md) keeps the archived week-2 notes inside `docs/`
+- [scripts/run_full_pipeline.ps1](./scripts/run_full_pipeline.ps1) is the quickest non-LLM rerun path
+- [setup_venv.ps1](./setup_venv.ps1) bootstraps the local environment
+
+## Notes And Current Limitations
+
+- The Google Gemma backend requires `google-genai` and a valid API key
+- The Hugging Face backend is available for proposal generation in step 08, but not for step 10 evaluation
+- The FX-normalized workbook is currently a helper artifact; the main causal pipeline still defaults to the canonical raw workbook path from [config.py](./config.py)
+- LLM-generated proposal and evaluation outputs should be treated as supporting evidence, not definitive causal truth

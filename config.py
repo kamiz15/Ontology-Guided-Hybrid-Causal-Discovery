@@ -8,12 +8,16 @@
 import os
 
 # ── Paths ────────────────────────────────────────────────────
-RAW_DATA_PATH       = "data/raw/df_asst_bnk_ecb.xlsx" # supervisor data goes here
+RAW_DATA_PATH       = "data/raw/df_asst_bnk_ecb.xlsx"  # canonical workbook for all runs
 CLEAN_DATA_PATH     = "data/processed/data_clean.csv"
 READY_DATA_PATH     = "data/processed/data_ready.csv"
 COLUMN_MAPPING_PATH = "data/processed/column_mapping.csv"
 AUDIT_REPORT_PATH   = "reports/audit_report.txt"
 HIGH_CORR_PATH      = "reports/high_correlation_pairs.csv"
+FX_RATES_PDF_PATH   = "exchange_rates/exchange_rate_2025.pdf"
+FX_RATES_CSV_PATH   = "exchange_rates/ecb_rates_2025.csv"
+FX_PROCESSED_PATH   = "data/processed/df_asst_bnk_ecb_processed.xlsx"
+LOCAL_VENV_PATH     = ".venv"
 
 # ── Thresholds (tune these without touching any other file) ──
 MISSING_DROP_THRESHOLD   = 1.0   # drop column if 100% missing
@@ -46,6 +50,15 @@ ZSCORE_COMPONENTS = ["z1", "z2", "z3", "z4", "z5"]
 EXCLUDE_FROM_CAUSAL = METADATA_COLS + ZSCORE_COMPONENTS
 
 # ── Ensure output directories exist ─────────────────────────
-for folder in ["data/raw", "data/processed", "reports",
-               "outputs/graphs", "outputs/metrics"]:
+for folder in [
+    "data/raw",
+    "data/processed",
+    "reports",
+    "outputs/graphs",
+    "outputs/metrics",
+    "outputs/figures",
+    "scripts",
+    "docs",
+    "exchange_rates",
+]:
     os.makedirs(folder, exist_ok=True)

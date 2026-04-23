@@ -352,7 +352,7 @@ def clean_dataset(input_path: str,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Clean and prepare dataset for causal discovery.")
-    parser.add_argument("--input",  default=RAW_DATA_PATH,   help="Path to raw CSV")
+    parser.add_argument("--input",  default=RAW_DATA_PATH,   help="Path to raw workbook or CSV")
     parser.add_argument("--clean",  default=CLEAN_DATA_PATH, help="Path for clean output")
     parser.add_argument("--ready",  default=READY_DATA_PATH, help="Path for causal-ready output")
     parser.add_argument("--corr",   default=HIGH_CORR_PATH,  help="Path for correlation report")

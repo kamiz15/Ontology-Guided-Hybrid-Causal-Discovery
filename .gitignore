@@ -8,6 +8,7 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+.venv/
 
 # Reports (optional - you may want these tracked)
 # reports/
