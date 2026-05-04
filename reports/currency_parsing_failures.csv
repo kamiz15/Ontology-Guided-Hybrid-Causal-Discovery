@@ -1,0 +1,23 @@
+row_index,column,raw_value,reason
+2,community_investment_eur,"Qualitative: Volunteering programs, donations, fundraising, grants, and sponsorships.",no recognizable numeric content
+4,community_investment_eur,€ or local currency,no recognizable numeric content
+7,community_investment_eur,Moderate (Qualitative),no recognizable numeric content
+19,community_investment_eur,"COP 3,453,667,730",unsupported currency: COP
+28,community_investment_eur,Qualitative,no recognizable numeric content
+36,community_investment_eur,(Specific total € not reported in TCFD),no recognizable numeric content
+65,community_investment_eur,€ or local currency,no recognizable numeric content
+68,community_investment_eur,€ or local currency,no recognizable numeric content
+69,community_investment_eur,USD ($),no recognizable numeric content
+72,community_investment_eur,(Blank),no recognizable numeric content
+80,community_investment_eur,€,no recognizable numeric content
+96,community_investment_eur,RLB Social Fund,no recognizable numeric content
+100,community_investment_eur,€,no recognizable numeric content
+109,community_investment_eur,Local Currency,no recognizable numeric content
+19,green_financing_eur,"COP 383,886 Million",unsupported currency: COP
+68,green_financing_eur,€ or local currency,no recognizable numeric content
+69,green_financing_eur,USD ($),no recognizable numeric content
+80,green_financing_eur,€,no recognizable numeric content
+100,green_financing_eur,€,no recognizable numeric content
+104,green_financing_eur,Very Good (Qualitative),no recognizable numeric content
+108,green_financing_eur,CZK (Not Aggregated),no recognizable numeric content
+19,total_revenue_eur,"COP 3,187.36 Billion (MMM)",unsupported currency: COP

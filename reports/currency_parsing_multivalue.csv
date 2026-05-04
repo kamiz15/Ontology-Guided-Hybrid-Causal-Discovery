@@ -1,0 +1,18 @@
+row_index,column,raw_value,parsed_amounts,parsed_total
+6,community_investment_eur,"€118,000 (Grants); €700,000+ (Scholarships)",118000.00; 700000.00,818000.0
+41,community_investment_eur,"$2,000,000 (Regional) / €250,000 (Local)",2000000.00; 250000.00,1914893.6170212766
+58,community_investment_eur,€17 million (Sponsorships) / €12 million (egg accelerator),17000000.00; 12000000.00,29000000.0
+60,community_investment_eur,+3B(Philanthropic);+19B (Community Loans/Investments),3.00; 19.00,22.0
+89,community_investment_eur,"10,415 volunteer hours / 216,000 youth supported",10415.00; 216000.00,226415.0
+9,green_financing_eur,SEK 74.2 billion (Sustainable financing) / SEK 259 billion (Activity Index volume),74200000000.00; 259000000000.00,30790555837.91526
+18,green_financing_eur,"€15,000 million (2023) / €38,600 million (Cumulative)",15000000000.00; 38600000000.00,53600000000.0
+33,green_financing_eur,€117 billion (Loans) / €67 billion (Bonds),117000000000.00; 67000000000.00,184000000000.0
+34,green_financing_eur,"$157,947 Million (2022); $410,098 Million (Cumulative)",157947000.00; 410098000.00,483442553.19148934
+39,green_financing_eur,"€50,813 M (Mobilized); €9,330 M (Green financing)",50813000000.00; 9330000000.00,60143000000.0
+41,green_financing_eur,$155m (Turnover) / $282m (CapEx),155000000.00; 282000000.00,371914893.61702126
+70,green_financing_eur,€19.3 billion (Env) / €7.4 billion (Social),19300000000.00; 7400000000.00,26700000000.0
+84,green_financing_eur,"€1,981 million (RES Balances) / €468 million (Green RRF)",1981000000.00; 468000000.00,2449000000.0
+89,green_financing_eur,"EUR 135bn (Facilitated) / EUR 12,108m (Green Loans)",135000000000.00; 12108000000.00,147108000000.0
+95,green_financing_eur,"11,049 Mio. € (Total); 5,525 Mio. € (Green)",11049000000.00; 5525000000.00,16574000000.0
+102,green_financing_eur,$650 billion (ESG AUM); $365.8 million (Bonds),650000000000.00; 365800000.00,553502808510.6383
+9,total_revenue_eur,"SEK 80,193 million (Operating Income) / SEK 174,354 million (Gross Income)",80193000000.00; 174354000000.00,23522339786.53606

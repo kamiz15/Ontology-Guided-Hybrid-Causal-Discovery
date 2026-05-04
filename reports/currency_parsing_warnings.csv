@@ -1,0 +1,7 @@
+row_index,column,raw_value,parsed_value,suspected_correct_value,warning
+33,green_financing_eur,€117 billion (Loans) / €67 billion (Bonds),184000000000.0,184000000.0,suspected over-parse for currency value
+43,green_financing_eur,€238bn,238000000000.0,238000000.0,suspected over-parse for currency value
+52,green_financing_eur,€ 279 billion (Cumulative),279000000000.0,279000000.0,suspected over-parse for currency value
+66,green_financing_eur,€115 billion,115000000000.0,115000000.0,suspected over-parse for currency value
+89,green_financing_eur,"EUR 135bn (Facilitated) / EUR 12,108m (Green Loans)",147108000000.0,147108000.0,suspected over-parse for currency value
+101,green_financing_eur,€300 billion,300000000000.0,300000000.0,suspected over-parse for currency value
