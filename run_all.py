@@ -33,16 +33,23 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+import config as project_config
+
 
 ROOT = Path(__file__).resolve().parent
 RESULTS_DIR = ROOT / "outputs" / "experiments"
 RESULTS_PATH = RESULTS_DIR / "results.csv"
 SUMMARY_PATH = RESULTS_DIR / "results_summary.csv"
 FAILURES_PATH = RESULTS_DIR / "failures.csv"
+DECI_DIAGNOSTICS_PATH = RESULTS_DIR / "deci_diagnostics.csv"
+DECI_THRESHOLD_SWEEP_PATH = RESULTS_DIR / "deci_threshold_sweep.csv"
+DECI_STABLE_EDGES_PATH = RESULTS_DIR / "deci_stable_edges.csv"
 DECI_WORK_DIR = RESULTS_DIR / "deci_work"
 DECI_TIMEOUT_SECONDS = 300
 DECI_GLOBAL_ABORT_SECONDS = 1800
 NOTEARS_NOTE_PRINTED = False
+CURRENT_DECI_THRESHOLD = float(getattr(project_config, "DECI_THRESHOLD", 0.275))
+DECI_RUN_CACHE: dict[tuple[str, str, int], dict[str, Any]] = {}
 
 DATASETS = {
     "synthetic_n2000": {
@@ -92,6 +99,117 @@ NUMERIC_SUMMARY_COLUMNS = [
     "literature_alignment_score",
 ]
 
+DECI_DIAGNOSTIC_COLUMNS = [
+    "algorithm",
+    "dataset",
+    "mode",
+    "seed",
+    "n_samples",
+    "n_variables",
+    "training_status",
+    "runtime_seconds",
+    "device",
+    "preset",
+    "backend_used",
+    "causica_compat_status",
+    "causica_error",
+    "threshold_mode",
+    "threshold_used",
+    "native_constraints_supported",
+    "constraint_handling",
+    "small_data_warning",
+    "raw_adjacency_shape",
+    "raw_min",
+    "raw_max",
+    "raw_mean",
+    "raw_std",
+    "abs_q50",
+    "abs_q75",
+    "abs_q90",
+    "abs_q95",
+    "abs_q99",
+    "weighted_nonzero_edges",
+    "weighted_near_nonzero_edges",
+    "edges_after_threshold",
+    "forbidden_edges_predicted_before_enforcement",
+    "required_edges_missing_before_enforcement",
+    "forbidden_edges_removed",
+    "required_edges_added",
+    "constraint_cells_changed",
+    "edges_after_constraint_enforcement",
+    "diagnostic_message",
+    "shd",
+    "f1_directed",
+    "f1_skeleton",
+    "precision",
+    "recall",
+    "literature_agreement_count",
+    "literature_violation_count",
+    "literature_alignment_score",
+    "raw_weights_path",
+    "final_adjacency_path",
+]
+
+DECI_THRESHOLD_SWEEP_COLUMNS = [
+    "dataset",
+    "mode",
+    "seed",
+    "threshold",
+    "edge_count",
+    "edge_count_true",
+    "f1_directed",
+    "precision",
+    "recall",
+    "shd",
+    "violations",
+    "constraint_cells_changed",
+    "selected",
+]
+
+DECI_STABLE_EDGE_COLUMNS = [
+    "dataset",
+    "mode",
+    "source",
+    "target",
+    "frequency",
+    "mean_weight",
+    "sign_if_available",
+    "passes_60_percent",
+    "passes_80_percent",
+    "forbidden_edge",
+    "required_edge",
+]
+
+DECI_PRESETS = {
+    "fast_debug": {
+        "max_epochs": 5,
+        "learning_rate": 3e-3,
+        "batch_size_cap": 64,
+        "hidden_dim": 16,
+        "l1_lambda": 0.1,
+        "device": "cpu",
+        "timeout_seconds": 90,
+    },
+    "small_data": {
+        "max_epochs": 20,
+        "learning_rate": 1e-3,
+        "batch_size_cap": 64,
+        "hidden_dim": 16,
+        "l1_lambda": 0.05,
+        "device": "cpu",
+        "timeout_seconds": 180,
+    },
+    "default": {
+        "max_epochs": 50,
+        "learning_rate": 3e-3,
+        "batch_size_cap": 128,
+        "hidden_dim": 32,
+        "l1_lambda": 0.1,
+        "device": "cpu",
+        "timeout_seconds": 300,
+    },
+}
+
 
 def log(message: str) -> None:
     """Print a runner-prefixed log line."""
@@ -121,6 +239,12 @@ def ensure_outputs() -> None:
         csv.DictWriter(handle, fieldnames=RESULT_COLUMNS).writeheader()
     with FAILURES_PATH.open("w", newline="", encoding="utf-8") as handle:
         csv.DictWriter(handle, fieldnames=FAILURE_COLUMNS).writeheader()
+    with DECI_DIAGNOSTICS_PATH.open("w", newline="", encoding="utf-8") as handle:
+        csv.DictWriter(handle, fieldnames=DECI_DIAGNOSTIC_COLUMNS).writeheader()
+    with DECI_THRESHOLD_SWEEP_PATH.open("w", newline="", encoding="utf-8") as handle:
+        csv.DictWriter(handle, fieldnames=DECI_THRESHOLD_SWEEP_COLUMNS).writeheader()
+    with DECI_STABLE_EDGES_PATH.open("w", newline="", encoding="utf-8") as handle:
+        csv.DictWriter(handle, fieldnames=DECI_STABLE_EDGE_COLUMNS).writeheader()
 
 
 def append_result(row: dict[str, Any]) -> None:
@@ -177,6 +301,28 @@ def append_failure(
             "error": str(exc),
             "traceback": traceback.format_exc(),
         })
+
+
+def append_csv_row(path: Path, columns: list[str], row: dict[str, Any]) -> None:
+    """
+    Append a row to a CSV with a fixed schema.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Destination CSV.
+    columns : list[str]
+        Ordered output columns.
+    row : dict[str, Any]
+        Row values.
+
+    Returns
+    -------
+    None
+    """
+    full_row = {column: row.get(column, "") for column in columns}
+    with path.open("a", newline="", encoding="utf-8") as handle:
+        csv.DictWriter(handle, fieldnames=columns).writerow(full_row)
 
 
 def load_module_from_path(module_name: str, path: Path) -> Any:
@@ -305,6 +451,192 @@ def load_constraints(dataset_name: str, adapter: Any) -> tuple[list[tuple[str, s
     constraint_dataset = DATASETS[dataset_name]["constraint_dataset"]
     forbidden, required, _ = adapter.load_constraints_for_dataset(constraint_dataset)
     return forbidden, required
+
+
+def get_deci_preset() -> dict[str, Any]:
+    """
+    Return the configured DECI hyperparameter preset.
+
+    Returns
+    -------
+    dict[str, Any]
+        Preset values.
+    """
+    preset_name = str(getattr(project_config, "DECI_PRESET", "small_data"))
+    if preset_name not in DECI_PRESETS:
+        raise ValueError(f"Unknown DECI_PRESET={preset_name!r}")
+    preset = dict(DECI_PRESETS[preset_name])
+    preset["name"] = preset_name
+    return preset
+
+
+def small_data_warning(n_samples: int, n_variables: int) -> str:
+    """
+    Build a DECI small-data warning message.
+
+    Parameters
+    ----------
+    n_samples : int
+        Number of rows.
+    n_variables : int
+        Number of variables.
+
+    Returns
+    -------
+    str
+        Warning message or empty string.
+    """
+    threshold = int(getattr(project_config, "MIN_SAMPLES_PER_VARIABLE_WARNING", 10))
+    if n_variables <= 0:
+        return ""
+    ratio = n_samples / n_variables
+    if ratio < 5:
+        return (
+            f"strong_warning: n_samples/n_variables={ratio:.2f} < 5; "
+            "DECI is exploratory and unstable for this dataset"
+        )
+    if ratio < threshold:
+        return (
+            f"warning: n_samples/n_variables={ratio:.2f} < {threshold}; "
+            "DECI is exploratory for this small dataset"
+        )
+    return ""
+
+
+def threshold_weight_matrix(
+    weights: np.ndarray,
+    mode: str,
+    fixed_threshold: float,
+    percentile: float,
+    topk: int | None,
+) -> tuple[np.ndarray, float]:
+    """
+    Threshold a weighted DECI adjacency matrix.
+
+    Parameters
+    ----------
+    weights : np.ndarray
+        Weighted adjacency matrix.
+    mode : str
+        fixed, percentile, or topk.
+    fixed_threshold : float
+        Numeric fixed threshold.
+    percentile : float
+        Percentile threshold for diagnostic mode.
+    topk : int or None
+        Number of strongest edges to keep for top-k mode.
+
+    Returns
+    -------
+    tuple[np.ndarray, float]
+        Binary adjacency and effective numeric threshold.
+    """
+    values = np.abs(np.asarray(weights, dtype=float)).copy()
+    np.fill_diagonal(values, 0.0)
+    non_diag = values[~np.eye(values.shape[0], dtype=bool)]
+
+    if mode == "fixed":
+        threshold = float(fixed_threshold)
+        adjacency = (values > threshold).astype(int)
+    elif mode == "percentile":
+        threshold = float(np.percentile(non_diag, percentile))
+        adjacency = (values > threshold).astype(int)
+    elif mode == "topk":
+        k = int(topk or 0)
+        threshold = float("inf")
+        adjacency = np.zeros_like(values, dtype=int)
+        if k > 0:
+            flat = values.ravel()
+            valid = np.where(~np.eye(values.shape[0], dtype=bool).ravel())[0]
+            k = min(k, len(valid))
+            chosen = valid[np.argsort(flat[valid])[-k:]]
+            threshold = float(flat[chosen].min()) if len(chosen) else float("inf")
+            adjacency.ravel()[chosen] = 1
+    else:
+        raise ValueError(f"Unsupported DECI_THRESHOLD_MODE={mode!r}")
+
+    np.fill_diagonal(adjacency, 0)
+    return adjacency, threshold
+
+
+def count_pairs(adjacency: np.ndarray, pairs: list[tuple[str, str]], columns: list[str]) -> int:
+    """
+    Count how many directed pairs are present in an adjacency matrix.
+
+    Parameters
+    ----------
+    adjacency : np.ndarray
+        Binary adjacency.
+    pairs : list[tuple[str, str]]
+        Directed pairs.
+    columns : list[str]
+        Matrix column order.
+
+    Returns
+    -------
+    int
+        Count present.
+    """
+    index = {name: i for i, name in enumerate(columns)}
+    count = 0
+    for source, target in pairs:
+        if source in index and target in index and adjacency[index[source], index[target]]:
+            count += 1
+    return count
+
+
+def enforce_deci_constraints(
+    adjacency: np.ndarray,
+    columns: list[str],
+    forbidden: list[tuple[str, str]],
+    required: list[tuple[str, str]],
+) -> tuple[np.ndarray, dict[str, int]]:
+    """
+    Apply post-processing constraints to a DECI binary adjacency.
+
+    Parameters
+    ----------
+    adjacency : np.ndarray
+        Thresholded adjacency before enforcement.
+    columns : list[str]
+        Variable order.
+    forbidden : list[tuple[str, str]]
+        Forbidden edges.
+    required : list[tuple[str, str]]
+        Required edges.
+
+    Returns
+    -------
+    tuple[np.ndarray, dict[str, int]]
+        Final adjacency and enforcement counters.
+    """
+    index = {name: i for i, name in enumerate(columns)}
+    final = np.asarray(adjacency, dtype=int).copy()
+    before = final.copy()
+
+    forbidden_removed = 0
+    required_added = 0
+    for source, target in forbidden:
+        if source in index and target in index:
+            i, j = index[source], index[target]
+            if final[i, j]:
+                forbidden_removed += 1
+            final[i, j] = 0
+    for source, target in required:
+        if source in index and target in index:
+            i, j = index[source], index[target]
+            if not final[i, j]:
+                required_added += 1
+            final[i, j] = 1
+            final[j, i] = 0
+
+    np.fill_diagonal(final, 0)
+    return final, {
+        "forbidden_removed": forbidden_removed,
+        "required_added": required_added,
+        "constraint_cells_changed": int(np.sum(final != before)),
+        "edges_after_constraint_enforcement": int(final.sum()),
+    }
 
 
 def causallearn_to_directed_adj(cg: Any) -> np.ndarray:
@@ -563,27 +895,47 @@ def deci_subprocess_entry(input_path: str, output_path: str) -> int:
         )
         run_name = str(payload["run_name"].item())
         adjacency_path = Path(str(payload["adjacency_path"].item()))
+        log_path = str(payload["log_path"].item())
+        max_epochs = int(payload["max_epochs"][0])
+        learning_rate = float(payload["learning_rate"][0])
+        batch_size_cap = int(payload["batch_size_cap"][0])
+        device = str(payload["device"].item())
+        hidden_dim = int(payload["hidden_dim"][0])
+        l1_lambda = float(payload["l1_lambda"][0])
+        seed = int(payload["seed"][0])
+        backend = str(payload["backend"].item())
+        allow_manual_fallback = bool(payload["allow_manual_fallback"][0])
+
+        np.random.seed(seed)
 
         (ROOT / "outputs" / "graphs").mkdir(parents=True, exist_ok=True)
-        metrics_dir = ROOT / "outputs" / "metrics"
-        metrics_dir.mkdir(parents=True, exist_ok=True)
+        Path(log_path).parent.mkdir(parents=True, exist_ok=True)
 
         deci_module = load_module_from_path("step_07_run_deci", ROOT / "07_run_deci.py")
-        batch_size = max(8, min(64, data.shape[0] // 2))
+        batch_size = max(8, min(batch_size_cap, data.shape[0] // 2))
         adj = deci_module.run_deci(
             data=data,
             columns=columns,
             constraint_matrix=constraint_matrix,
-            max_epochs=20,
-            learning_rate=3e-3,
+            max_epochs=max_epochs,
+            learning_rate=learning_rate,
             batch_size=batch_size,
-            device="cpu",
+            device=device,
             edge_threshold=0.5,
             run_name=run_name,
-            log_path=str(metrics_dir / "run_log_deci.csv"),
+            log_path=log_path,
+            hidden_dim=hidden_dim,
+            l1_lambda=l1_lambda,
+            seed=seed,
+            backend=backend,
+            allow_manual_fallback=allow_manual_fallback,
         )
         np.save(adjacency_path, np.asarray(adj, dtype=int))
-        result = {"status": "success", "adjacency_path": str(adjacency_path)}
+        result = {
+            "status": "success",
+            "adjacency_path": str(adjacency_path),
+            "backend_metadata": getattr(deci_module.run_deci, "last_metadata", {}),
+        }
     except BaseException as exc:
         result = {
             "status": "failed",
@@ -602,7 +954,7 @@ def run_deci_guarded(
     dataset_name: str,
     seed: int,
     adapter: Any,
-) -> np.ndarray:
+) -> tuple[np.ndarray, dict[str, Any]]:
     """
     Run the existing DECI helper in a timed subprocess.
 
@@ -623,9 +975,99 @@ def run_deci_guarded(
 
     Returns
     -------
-    np.ndarray
-        Directed binary adjacency.
+    tuple[np.ndarray, dict[str, Any]]
+        Directed binary adjacency and diagnostic metadata.
     """
+    cache_key = (dataset_name, mode, seed)
+    if cache_key in DECI_RUN_CACHE:
+        training = DECI_RUN_CACHE[cache_key]
+    else:
+        training = train_deci_guarded(data, columns, mode, dataset_name, seed, adapter)
+        DECI_RUN_CACHE[cache_key] = training
+
+    forbidden, required = load_constraints(dataset_name, adapter)
+    threshold_mode = str(getattr(project_config, "DECI_THRESHOLD_MODE", "fixed"))
+    percentile = float(getattr(project_config, "DECI_THRESHOLD_PERCENTILE", 95.0))
+    topk = getattr(project_config, "DECI_TOPK_EDGES", None)
+    threshold_value = float(CURRENT_DECI_THRESHOLD)
+
+    raw_weights = np.asarray(training["raw_weights"], dtype=float)
+    thresholded, effective_threshold = threshold_weight_matrix(
+        raw_weights,
+        threshold_mode,
+        threshold_value,
+        percentile,
+        topk,
+    )
+
+    forbidden_before = count_pairs(thresholded, forbidden, columns)
+    required_present_before = count_pairs(thresholded, required, columns)
+    required_missing_before = max(0, len([
+        pair for pair in required
+        if pair[0] in columns and pair[1] in columns
+    ]) - required_present_before)
+
+    final = thresholded.copy()
+    enforcement = {
+        "forbidden_removed": 0,
+        "required_added": 0,
+        "constraint_cells_changed": 0,
+        "edges_after_constraint_enforcement": int(final.sum()),
+    }
+    if mode == "constrained":
+        final, enforcement = enforce_deci_constraints(thresholded, columns, forbidden, required)
+
+    run_dir = Path(training["run_dir"])
+    final_adjacency_path = run_dir / "final_adjacency_thresholded.npy"
+    np.save(final_adjacency_path, final.astype(int))
+
+    metadata = build_deci_metadata(
+        training=training,
+        raw_weights=raw_weights,
+        thresholded=thresholded,
+        final=final,
+        effective_threshold=effective_threshold,
+        forbidden_before=forbidden_before,
+        required_missing_before=required_missing_before,
+        enforcement=enforcement,
+        final_adjacency_path=final_adjacency_path,
+    )
+    print_deci_run_diagnostic(metadata)
+    return final, metadata
+
+
+def train_deci_guarded(
+    data: np.ndarray,
+    columns: list[str],
+    mode: str,
+    dataset_name: str,
+    seed: int,
+    adapter: Any,
+) -> dict[str, Any]:
+    """
+    Train DECI in a Windows-safe subprocess and return raw weights.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Standardized bootstrap sample.
+    columns : list[str]
+        Variable names.
+    mode : str
+        unconstrained or constrained.
+    dataset_name : str
+        Dataset label.
+    seed : int
+        Seed.
+    adapter : Any
+        Constraint adapter module.
+
+    Returns
+    -------
+    dict[str, Any]
+        Raw DECI artifacts and run metadata.
+    """
+    preset = get_deci_preset()
     constraint_matrix = None
     if mode == "constrained":
         forbidden, required = load_constraints(dataset_name, adapter)
@@ -636,11 +1078,13 @@ def run_deci_guarded(
 
     run_name = f"deci_{dataset_name}_{mode}_seed{seed}"
 
-    DECI_WORK_DIR.mkdir(parents=True, exist_ok=True)
     safe_run_name = run_name.replace("/", "_").replace("\\", "_")
-    input_path = DECI_WORK_DIR / f"{safe_run_name}_input.npz"
-    output_path = DECI_WORK_DIR / f"{safe_run_name}_result.json"
-    adjacency_path = DECI_WORK_DIR / f"{safe_run_name}_adjacency.npy"
+    run_dir = DECI_WORK_DIR / safe_run_name
+    run_dir.mkdir(parents=True, exist_ok=True)
+    input_path = run_dir / "input.npz"
+    output_path = run_dir / "result.json"
+    adjacency_path = run_dir / "helper_adjacency.npy"
+    log_path = ROOT / "outputs" / "metrics" / "deci_logs" / f"{safe_run_name}_run_log.csv"
 
     np.savez_compressed(
         input_path,
@@ -654,6 +1098,18 @@ def run_deci_guarded(
         ),
         run_name=np.asarray(run_name),
         adjacency_path=np.asarray(str(adjacency_path)),
+        log_path=np.asarray(str(log_path)),
+        max_epochs=np.asarray([preset["max_epochs"]], dtype=int),
+        learning_rate=np.asarray([preset["learning_rate"]], dtype=float),
+        batch_size_cap=np.asarray([preset["batch_size_cap"]], dtype=int),
+        device=np.asarray(preset["device"]),
+        hidden_dim=np.asarray([preset["hidden_dim"]], dtype=int),
+        l1_lambda=np.asarray([preset["l1_lambda"]], dtype=float),
+        seed=np.asarray([seed], dtype=int),
+        backend=np.asarray(str(getattr(project_config, "DECI_BACKEND", "causica"))),
+        allow_manual_fallback=np.asarray([
+            bool(getattr(project_config, "DECI_ALLOW_MANUAL_FALLBACK", True))
+        ], dtype=bool),
     )
 
     command = [
@@ -663,18 +1119,30 @@ def run_deci_guarded(
         str(input_path),
         str(output_path),
     ]
+    started = time.perf_counter()
     try:
         completed = subprocess.run(
             command,
             cwd=ROOT,
-            env={**os.environ, "ESG_FORCE_MANUAL_DECI": "1"},
+            env={
+                **os.environ,
+                "ESG_DECI_BACKEND": str(getattr(project_config, "DECI_BACKEND", "causica")),
+                "ESG_DECI_ALLOW_MANUAL_FALLBACK": (
+                    "1" if bool(getattr(project_config, "DECI_ALLOW_MANUAL_FALLBACK", True)) else "0"
+                ),
+            },
             text=True,
+            encoding="utf-8",
+            errors="replace",
             capture_output=True,
-            timeout=DECI_TIMEOUT_SECONDS,
+            timeout=int(preset.get("timeout_seconds", DECI_TIMEOUT_SECONDS)),
             check=False,
         )
     except subprocess.TimeoutExpired as exc:
-        raise TimeoutError(f"DECI exceeded {DECI_TIMEOUT_SECONDS}s timeout") from exc
+        raise TimeoutError(
+            f"DECI exceeded {preset.get('timeout_seconds', DECI_TIMEOUT_SECONDS)}s timeout"
+        ) from exc
+    elapsed = time.perf_counter() - started
 
     if not output_path.exists():
         stderr_tail = (completed.stderr or "").strip()[-1000:]
@@ -685,10 +1153,431 @@ def run_deci_guarded(
     result = json.loads(output_path.read_text(encoding="utf-8"))
     if result["status"] != "success":
         raise RuntimeError(result.get("error", "DECI failed"))
+    backend_metadata = result.get("backend_metadata", {}) or {}
 
-    directed = (np.load(result["adjacency_path"]) != 0).astype(int)
-    np.fill_diagonal(directed, 0)
-    return directed
+    raw_weights_path = ROOT / "outputs" / "graphs" / f"{run_name}_raw_edge_probabilities.csv"
+    final_weights_path = ROOT / "outputs" / "graphs" / f"{run_name}_edge_probabilities.csv"
+    if not raw_weights_path.exists():
+        raise RuntimeError(f"DECI raw probability output missing: {raw_weights_path}")
+    raw_weights = pd.read_csv(raw_weights_path, index_col=0).loc[columns, columns].to_numpy(dtype=float)
+    helper_adjacency = (np.load(result["adjacency_path"]) != 0).astype(int)
+    np.fill_diagonal(helper_adjacency, 0)
+
+    return {
+        "dataset": dataset_name,
+        "mode": mode,
+        "seed": seed,
+        "n_samples": int(data.shape[0]),
+        "n_variables": int(len(columns)),
+        "device": preset["device"],
+        "preset": preset["name"],
+        "runtime_seconds": round(elapsed, 4),
+        "run_name": run_name,
+        "run_dir": str(run_dir),
+        "raw_weights": raw_weights,
+        "raw_weights_path": str(raw_weights_path),
+        "final_weights_path": str(final_weights_path),
+        "helper_adjacency_path": str(result["adjacency_path"]),
+        "helper_edge_count": int(helper_adjacency.sum()),
+        "backend_used": backend_metadata.get("backend_used", "unknown"),
+        "causica_compat_status": backend_metadata.get("causica_compat_status", ""),
+        "causica_error": backend_metadata.get("causica_error", ""),
+        "native_constraints_supported": bool(
+            backend_metadata.get("native_constraints_supported", False)
+        ),
+        "constraint_handling": backend_metadata.get(
+            "constraint_handling",
+            "unknown DECI constraint handling"
+        ),
+        "small_data_warning": small_data_warning(int(data.shape[0]), int(len(columns))),
+        "stdout_tail": (completed.stdout or "").strip()[-2000:],
+        "stderr_tail": (completed.stderr or "").strip()[-2000:],
+    }
+
+
+def build_deci_metadata(
+    training: dict[str, Any],
+    raw_weights: np.ndarray,
+    thresholded: np.ndarray,
+    final: np.ndarray,
+    effective_threshold: float,
+    forbidden_before: int,
+    required_missing_before: int,
+    enforcement: dict[str, int],
+    final_adjacency_path: Path,
+) -> dict[str, Any]:
+    """
+    Build diagnostic metadata for one DECI run.
+
+    Parameters
+    ----------
+    training : dict[str, Any]
+        Training artifacts.
+    raw_weights : np.ndarray
+        Raw weighted adjacency before final thresholding.
+    thresholded : np.ndarray
+        Binary adjacency before constraint enforcement.
+    final : np.ndarray
+        Final binary adjacency.
+    effective_threshold : float
+        Threshold used.
+    forbidden_before : int
+        Forbidden edges present before enforcement.
+    required_missing_before : int
+        Required edges absent before enforcement.
+    enforcement : dict[str, int]
+        Constraint post-processing counters.
+    final_adjacency_path : pathlib.Path
+        Saved final adjacency path.
+
+    Returns
+    -------
+    dict[str, Any]
+        Diagnostic metadata.
+    """
+    weights = np.asarray(raw_weights, dtype=float)
+    abs_weights = np.abs(weights.copy())
+    np.fill_diagonal(abs_weights, 0.0)
+    non_diag = abs_weights[~np.eye(abs_weights.shape[0], dtype=bool)]
+    quantiles = np.quantile(non_diag, [0.50, 0.75, 0.90, 0.95, 0.99])
+    max_abs = float(non_diag.max()) if non_diag.size else 0.0
+    near_nonzero = int(np.sum(non_diag > 1e-8))
+    weighted_nonzero = int(np.sum(non_diag != 0))
+    edges_after_threshold = int(thresholded.sum())
+    edges_after_constraints = int(final.sum())
+    possible_edges = int(weights.shape[0] * max(0, weights.shape[0] - 1))
+
+    messages: list[str] = []
+    if max_abs < 1e-8 or near_nonzero == 0:
+        messages.append("DECI learned near-zero adjacency before thresholding.")
+    elif edges_after_threshold == 0:
+        messages.append("DECI produced weights, but the chosen threshold removed all edges.")
+    elif possible_edges and edges_after_threshold >= int(0.8 * possible_edges):
+        messages.append(
+            "DECI fixed threshold produced an extremely dense graph; threshold does not transfer cleanly to this dataset."
+        )
+    if (
+        training["mode"] == "constrained"
+        and edges_after_threshold > 0
+        and edges_after_constraints <= max(1, int(0.2 * edges_after_threshold))
+    ):
+        messages.append("Constraint enforcement removed all or most DECI edges.")
+    elif possible_edges and edges_after_constraints >= int(0.8 * possible_edges):
+        messages.append("Final DECI graph is near-complete after constraint enforcement.")
+    if training.get("small_data_warning"):
+        messages.append(str(training["small_data_warning"]))
+    if not messages:
+        messages.append("DECI produced a non-empty diagnosable weighted adjacency.")
+
+    return {
+        "algorithm": (
+            "deci_native"
+            if training.get("backend_used") == "causica_native"
+            else "deci_postproc"
+        ),
+        "dataset": training["dataset"],
+        "mode": training["mode"],
+        "seed": training["seed"],
+        "n_samples": training["n_samples"],
+        "n_variables": training["n_variables"],
+        "training_status": "success",
+        "runtime_seconds": training.get("runtime_seconds"),
+        "device": training["device"],
+        "preset": training["preset"],
+        "backend_used": training.get("backend_used", ""),
+        "causica_compat_status": training.get("causica_compat_status", ""),
+        "causica_error": training.get("causica_error", ""),
+        "threshold_mode": getattr(project_config, "DECI_THRESHOLD_MODE", "fixed"),
+        "threshold_used": effective_threshold,
+        "native_constraints_supported": training["native_constraints_supported"],
+        "constraint_handling": training["constraint_handling"],
+        "small_data_warning": training["small_data_warning"],
+        "raw_adjacency_shape": f"{weights.shape[0]}x{weights.shape[1]}",
+        "raw_min": float(non_diag.min()) if non_diag.size else 0.0,
+        "raw_max": max_abs,
+        "raw_mean": float(non_diag.mean()) if non_diag.size else 0.0,
+        "raw_std": float(non_diag.std()) if non_diag.size else 0.0,
+        "abs_q50": float(quantiles[0]),
+        "abs_q75": float(quantiles[1]),
+        "abs_q90": float(quantiles[2]),
+        "abs_q95": float(quantiles[3]),
+        "abs_q99": float(quantiles[4]),
+        "weighted_nonzero_edges": weighted_nonzero,
+        "weighted_near_nonzero_edges": near_nonzero,
+        "edges_after_threshold": edges_after_threshold,
+        "forbidden_edges_predicted_before_enforcement": forbidden_before,
+        "required_edges_missing_before_enforcement": required_missing_before,
+        "forbidden_edges_removed": enforcement["forbidden_removed"],
+        "required_edges_added": enforcement["required_added"],
+        "constraint_cells_changed": enforcement["constraint_cells_changed"],
+        "edges_after_constraint_enforcement": edges_after_constraints,
+        "diagnostic_message": " ".join(messages),
+        "raw_weights_path": training["raw_weights_path"],
+        "final_adjacency_path": str(final_adjacency_path),
+    }
+
+
+def print_deci_run_diagnostic(metadata: dict[str, Any]) -> None:
+    """
+    Print a compact DECI diagnostic line.
+
+    Parameters
+    ----------
+    metadata : dict[str, Any]
+        DECI metadata.
+
+    Returns
+    -------
+    None
+    """
+    log(
+        "DECI diag "
+        f"{metadata['dataset']}/{metadata['mode']}/seed={metadata['seed']}: "
+        f"raw_max={metadata['raw_max']:.4f}, q95={metadata['abs_q95']:.4f}, "
+        f"threshold={metadata['threshold_used']:.4f}, "
+        f"edges_pre={metadata['edges_after_threshold']}, "
+        f"changed={metadata['constraint_cells_changed']}, "
+        f"edges_final={metadata['edges_after_constraint_enforcement']} | "
+        f"{metadata['diagnostic_message']}"
+    )
+
+
+def evaluate_deci_threshold(
+    raw_weights: np.ndarray,
+    threshold: float,
+    mode: str,
+    columns: list[str],
+    forbidden: list[tuple[str, str]],
+    required: list[tuple[str, str]],
+    true_adj: np.ndarray,
+) -> dict[str, Any]:
+    """
+    Evaluate one DECI threshold on synthetic ground truth.
+
+    Parameters
+    ----------
+    raw_weights : np.ndarray
+        Raw DECI weights.
+    threshold : float
+        Candidate threshold.
+    mode : str
+        unconstrained or constrained.
+    columns : list[str]
+        Variable names.
+    forbidden : list[tuple[str, str]]
+        Forbidden constraints.
+    required : list[tuple[str, str]]
+        Required constraints.
+    true_adj : np.ndarray
+        Synthetic ground truth.
+
+    Returns
+    -------
+    dict[str, Any]
+        Sweep metrics.
+    """
+    thresholded, _ = threshold_weight_matrix(
+        raw_weights,
+        "fixed",
+        threshold,
+        float(getattr(project_config, "DECI_THRESHOLD_PERCENTILE", 95.0)),
+        getattr(project_config, "DECI_TOPK_EDGES", None),
+    )
+    final = thresholded
+    changes = 0
+    if mode == "constrained":
+        final, enforcement = enforce_deci_constraints(thresholded, columns, forbidden, required)
+        changes = enforcement["constraint_cells_changed"]
+
+    metrics = compute_synthetic_metrics(final, true_adj)
+    return {
+        "edge_count": metrics["edge_count_predicted"],
+        "edge_count_true": metrics["edge_count_true"],
+        "f1_directed": metrics["f1_directed"],
+        "precision": metrics["precision"],
+        "recall": metrics["recall"],
+        "shd": metrics["shd"],
+        "violations": count_pairs(final, forbidden, columns),
+        "constraint_cells_changed": changes,
+    }
+
+
+def append_deci_threshold_sweep(
+    training: dict[str, Any],
+    columns: list[str],
+    true_adj: np.ndarray,
+    adapter: Any,
+) -> None:
+    """
+    Append synthetic threshold-sweep rows for one DECI run.
+
+    Parameters
+    ----------
+    training : dict[str, Any]
+        Raw DECI training artifacts.
+    columns : list[str]
+        Variable names.
+    true_adj : np.ndarray
+        Ground-truth adjacency.
+    adapter : Any
+        Constraint adapter.
+
+    Returns
+    -------
+    None
+    """
+    forbidden, required = load_constraints(training["dataset"], adapter)
+    candidates = list(getattr(project_config, "DECI_THRESHOLD_CANDIDATES", []))
+    if not candidates:
+        candidates = [float(getattr(project_config, "DECI_THRESHOLD", 0.275))]
+    for threshold in candidates:
+        metrics = evaluate_deci_threshold(
+            raw_weights=training["raw_weights"],
+            threshold=float(threshold),
+            mode=training["mode"],
+            columns=columns,
+            forbidden=forbidden,
+            required=required,
+            true_adj=true_adj,
+        )
+        append_csv_row(DECI_THRESHOLD_SWEEP_PATH, DECI_THRESHOLD_SWEEP_COLUMNS, {
+            "dataset": training["dataset"],
+            "mode": training["mode"],
+            "seed": training["seed"],
+            "threshold": float(threshold),
+            **metrics,
+            "selected": "",
+        })
+
+
+def choose_deci_threshold_from_sweep() -> tuple[float, str]:
+    """
+    Select a fixed DECI threshold from synthetic sweep rows only.
+
+    Returns
+    -------
+    tuple[float, str]
+        Selected threshold and human-readable reason.
+    """
+    if not DECI_THRESHOLD_SWEEP_PATH.exists():
+        fallback = float(getattr(project_config, "DECI_THRESHOLD", 0.275))
+        return fallback, "no sweep rows available; using configured fallback"
+
+    sweep = pd.read_csv(DECI_THRESHOLD_SWEEP_PATH)
+    if sweep.empty:
+        fallback = float(getattr(project_config, "DECI_THRESHOLD", 0.275))
+        return fallback, "empty sweep; using configured fallback"
+
+    selection_pool = sweep[
+        (sweep["dataset"] == "synthetic_n2000")
+        & (sweep["mode"] == "unconstrained")
+    ].copy()
+    if selection_pool.empty:
+        selection_pool = sweep[sweep["dataset"] == "synthetic_n2000"].copy()
+    if selection_pool.empty:
+        fallback = float(getattr(project_config, "DECI_THRESHOLD", 0.275))
+        return fallback, "no synthetic sweep rows; using configured fallback"
+
+    grouped = selection_pool.groupby("threshold", as_index=False).agg({
+        "f1_directed": "mean",
+        "shd": "mean",
+        "edge_count": "mean",
+        "edge_count_true": "mean",
+    })
+    true_edges = float(grouped["edge_count_true"].iloc[0])
+    max_edges = float(getattr(project_config, "DECI_MAX_DENSITY_MULTIPLE", 1.5)) * true_edges
+    min_edges = float(getattr(project_config, "DECI_MIN_DENSITY_MULTIPLE", 0.25)) * true_edges
+    feasible = grouped[
+        (grouped["edge_count"] <= max_edges)
+        & (grouped["edge_count"] >= min_edges)
+    ].copy()
+
+    if feasible.empty:
+        grouped["density_gap"] = (grouped["edge_count"] - true_edges).abs()
+        chosen = grouped.sort_values(
+            ["density_gap", "f1_directed", "shd"],
+            ascending=[True, False, True],
+        ).iloc[0]
+        reason = (
+            "selected synthetic threshold with closest mean edge count to true "
+            f"edge count ({true_edges:.0f}) because no candidate passed density bounds"
+        )
+    else:
+        chosen = feasible.sort_values(
+            ["f1_directed", "shd", "edge_count"],
+            ascending=[False, True, True],
+        ).iloc[0]
+        reason = (
+            "selected on synthetic unconstrained sweep: best mean F1 among "
+            f"thresholds with edge count between {min_edges:.1f} and {max_edges:.1f}; "
+            "real data was not used"
+        )
+
+    selected = float(chosen["threshold"])
+    sweep["selected"] = np.where(sweep["threshold"].astype(float) == selected, "yes", "")
+    sweep.to_csv(DECI_THRESHOLD_SWEEP_PATH, index=False)
+    return selected, reason
+
+
+def calibrate_deci_threshold(
+    requested_algorithms: list[str],
+    requested_datasets: list[str],
+    seeds: list[int],
+    dataset_cache: dict[str, tuple[pd.DataFrame, np.ndarray | None, list[str]]],
+    adapter: Any,
+) -> tuple[float, str]:
+    """
+    Run synthetic-only DECI threshold calibration.
+
+    Parameters
+    ----------
+    requested_algorithms : list[str]
+        Algorithms requested by the run.
+    requested_datasets : list[str]
+        Datasets requested by the run.
+    seeds : list[int]
+        Bootstrap seeds.
+    dataset_cache : dict
+        Loaded datasets.
+    adapter : Any
+        Constraint adapter.
+
+    Returns
+    -------
+    tuple[float, str]
+        Selected threshold and reason.
+    """
+    fallback = float(getattr(project_config, "DECI_THRESHOLD", 0.275))
+    if "deci" not in requested_algorithms:
+        return fallback, "DECI not requested"
+    if not bool(getattr(project_config, "DECI_CALIBRATE_THRESHOLD_ON_SYNTHETIC", True)):
+        return fallback, "synthetic calibration disabled; using configured threshold"
+    if "synthetic_n2000" not in dataset_cache:
+        return fallback, "synthetic_n2000 not loaded; using configured threshold"
+
+    df, true_adj, columns = dataset_cache["synthetic_n2000"]
+    if true_adj is None:
+        return fallback, "synthetic ground truth unavailable; using configured threshold"
+
+    log("Calibrating DECI threshold on synthetic_n2000 only; real data is not used.")
+    for mode in ["unconstrained", "constrained"]:
+        for seed in seeds:
+            cache_key = ("synthetic_n2000", mode, seed)
+            if cache_key not in DECI_RUN_CACHE:
+                data_boot = bootstrap_data(df, seed)
+                DECI_RUN_CACHE[cache_key] = train_deci_guarded(
+                    data=data_boot,
+                    columns=columns,
+                    mode=mode,
+                    dataset_name="synthetic_n2000",
+                    seed=seed,
+                    adapter=adapter,
+                )
+            append_deci_threshold_sweep(DECI_RUN_CACHE[cache_key], columns, true_adj, adapter)
+
+    selected, reason = choose_deci_threshold_from_sweep()
+    log(f"Selected DECI fixed threshold={selected:.4f}. Reason: {reason}")
+    return selected, reason
 
 
 def compute_synthetic_metrics(predicted: np.ndarray, true: np.ndarray) -> dict[str, float | int]:
@@ -865,7 +1754,11 @@ def run_algorithm(
     if algorithm == "lingam":
         return run_lingam(data, columns, mode, dataset_name, adapter)
     if algorithm == "deci":
-        if time.perf_counter() - total_started > DECI_GLOBAL_ABORT_SECONDS:
+        cache_key = (dataset_name, mode, seed)
+        if (
+            cache_key not in DECI_RUN_CACHE
+            and time.perf_counter() - total_started > DECI_GLOBAL_ABORT_SECONDS
+        ):
             raise TimeoutError("DECI skipped because total runtime exceeded 30 minutes")
         return run_deci_guarded(data, columns, mode, dataset_name, seed, adapter)
     raise ValueError(f"Unsupported algorithm: {algorithm}")
@@ -912,7 +1805,16 @@ def run_one(
         success or failed.
     """
     started = time.perf_counter()
-    result_algorithm = "notears_postproc" if algorithm == "notears" else algorithm
+    if algorithm == "notears":
+        result_algorithm = "notears_postproc"
+    elif algorithm == "deci":
+        result_algorithm = (
+            "deci_native"
+            if str(getattr(project_config, "DECI_BACKEND", "causica")).lower() == "causica"
+            else "deci_postproc"
+        )
+    else:
+        result_algorithm = algorithm
     try:
         data_boot = bootstrap_data(df, seed)
         prediction = run_algorithm(
@@ -931,6 +1833,8 @@ def run_one(
             metadata = prediction[1]
         else:
             predicted = prediction
+        if algorithm == "deci" and metadata.get("backend_used") == "causica_native":
+            result_algorithm = "deci_native"
         elapsed = time.perf_counter() - started
 
         row: dict[str, Any] = {
@@ -944,7 +1848,15 @@ def run_one(
 
         if true_adj is not None:
             row.update(compute_synthetic_metrics(predicted, true_adj))
-            if algorithm == "notears":
+            if algorithm == "deci":
+                log(
+                    f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
+                    f"edges={row['edge_count_predicted']}, "
+                    f"SHD={row['shd']}, F1={row['f1_directed']:.3f}, "
+                    f"threshold={metadata.get('threshold_used', '')} "
+                    f"({elapsed:.1f}s)"
+                )
+            elif algorithm == "notears":
                 log(
                     f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
                     f"edges={row['edge_count_predicted']}, "
@@ -962,7 +1874,16 @@ def run_one(
             forbidden, _ = load_constraints(dataset_name, adapter)
             literature_supported = load_literature_supported_pairs(columns)
             row.update(compute_real_metrics(predicted, columns, forbidden, literature_supported))
-            if algorithm == "notears":
+            if algorithm == "deci":
+                log(
+                    f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
+                    f"edges={row['edge_count_predicted']}, "
+                    f"align={row['literature_alignment_score']:.3f}, "
+                    f"violations={row['literature_violation_count']}, "
+                    f"threshold={metadata.get('threshold_used', '')} "
+                    f"({elapsed:.1f}s)"
+                )
+            elif algorithm == "notears":
                 log(
                     f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
                     f"edges={row['edge_count_predicted']}, "
@@ -978,6 +1899,11 @@ def run_one(
                     f"({elapsed:.1f}s)"
                 )
 
+        if algorithm == "deci":
+            diagnostic = {**row, **metadata}
+            diagnostic["runtime_seconds"] = metadata.get("runtime_seconds", round(elapsed, 4))
+            append_csv_row(DECI_DIAGNOSTICS_PATH, DECI_DIAGNOSTIC_COLUMNS, diagnostic)
+
         append_result(row)
         return "success"
     except Exception as exc:
@@ -992,6 +1918,21 @@ def run_one(
             "status": f"failed: {exc}",
             "edge_count_true": int(true_adj.sum()) if true_adj is not None else "",
         })
+        if algorithm == "deci":
+            append_csv_row(DECI_DIAGNOSTICS_PATH, DECI_DIAGNOSTIC_COLUMNS, {
+                "algorithm": result_algorithm,
+                "dataset": dataset_name,
+                "mode": mode,
+                "seed": seed,
+                "n_samples": max(2, int(0.8 * len(df))),
+                "n_variables": len(columns),
+                "training_status": f"failed: {exc}",
+                "runtime_seconds": round(elapsed, 4),
+                "device": get_deci_preset().get("device", "cpu"),
+                "preset": get_deci_preset().get("name", ""),
+                "backend_used": str(getattr(project_config, "DECI_BACKEND", "causica")),
+                "diagnostic_message": f"DECI training failed; no zero matrix was substituted. Error: {exc}",
+            })
         log(
             f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
             f"FAILED ({elapsed:.1f}s): {exc}"
@@ -1116,6 +2057,141 @@ def print_final_summaries(summary: pd.DataFrame) -> None:
             )
 
 
+def write_deci_stable_edges(adapter: Any) -> pd.DataFrame:
+    """
+    Write DECI edge-frequency stability table across seeds.
+
+    Parameters
+    ----------
+    adapter : Any
+        Constraint adapter.
+
+    Returns
+    -------
+    pd.DataFrame
+        Stable-edge table.
+    """
+    if not DECI_DIAGNOSTICS_PATH.exists():
+        stable = pd.DataFrame(columns=DECI_STABLE_EDGE_COLUMNS)
+        stable.to_csv(DECI_STABLE_EDGES_PATH, index=False)
+        return stable
+
+    diagnostics = pd.read_csv(DECI_DIAGNOSTICS_PATH)
+    diagnostics = diagnostics[diagnostics["training_status"] == "success"].copy()
+    if diagnostics.empty:
+        stable = pd.DataFrame(columns=DECI_STABLE_EDGE_COLUMNS)
+        stable.to_csv(DECI_STABLE_EDGES_PATH, index=False)
+        return stable
+
+    rows: list[dict[str, Any]] = []
+    for (dataset_name, mode), group in diagnostics.groupby(["dataset", "mode"]):
+        config = DATASETS[str(dataset_name)]
+        _, _, variables = load_dataset(str(dataset_name))
+        forbidden, required = load_constraints(str(dataset_name), adapter)
+        forbidden_set = set(forbidden)
+        required_set = set(required)
+        n_runs = len(group)
+        edge_counts: dict[tuple[str, str], int] = {}
+        weight_sums: dict[tuple[str, str], float] = {}
+
+        for _, diag in group.iterrows():
+            adj_path = Path(str(diag["final_adjacency_path"]))
+            raw_path = Path(str(diag["raw_weights_path"]))
+            if not adj_path.exists() or not raw_path.exists():
+                continue
+            adjacency = (np.load(adj_path) != 0).astype(int)
+            raw_weights = pd.read_csv(raw_path, index_col=0).loc[variables, variables].to_numpy(dtype=float)
+            for i, source in enumerate(variables):
+                for j, target in enumerate(variables):
+                    if i == j:
+                        continue
+                    pair = (source, target)
+                    if adjacency[i, j]:
+                        edge_counts[pair] = edge_counts.get(pair, 0) + 1
+                    weight_sums[pair] = weight_sums.get(pair, 0.0) + float(raw_weights[i, j])
+
+        for pair, count in sorted(edge_counts.items()):
+            frequency = count / n_runs if n_runs else 0.0
+            rows.append({
+                "dataset": dataset_name,
+                "mode": mode,
+                "source": pair[0],
+                "target": pair[1],
+                "frequency": frequency,
+                "mean_weight": weight_sums.get(pair, 0.0) / n_runs if n_runs else 0.0,
+                "sign_if_available": "unsigned_probability",
+                "passes_60_percent": frequency >= 0.60,
+                "passes_80_percent": frequency >= 0.80,
+                "forbidden_edge": pair in forbidden_set,
+                "required_edge": pair in required_set,
+            })
+
+    stable = pd.DataFrame(rows, columns=DECI_STABLE_EDGE_COLUMNS)
+    stable.to_csv(DECI_STABLE_EDGES_PATH, index=False)
+    return stable
+
+
+def print_deci_interpretation(summary: pd.DataFrame) -> None:
+    """
+    Print automated DECI diagnostic interpretation.
+
+    Parameters
+    ----------
+    summary : pd.DataFrame
+        Results summary.
+
+    Returns
+    -------
+    None
+    """
+    if not DECI_DIAGNOSTICS_PATH.exists():
+        return
+    diagnostics = pd.read_csv(DECI_DIAGNOSTICS_PATH)
+    deci_success = diagnostics[diagnostics["training_status"] == "success"].copy()
+    if deci_success.empty:
+        log("DECI diagnostic interpretation:")
+        log("  No successful DECI runs; inspect deci_diagnostics.csv and failures.csv.")
+        return
+
+    log("DECI diagnostic interpretation:")
+    if (deci_success["weighted_near_nonzero_edges"].fillna(0) == 0).any():
+        log("  At least one DECI run learned near-zero adjacency before thresholding.")
+    if (
+        (deci_success["weighted_near_nonzero_edges"].fillna(0) > 0)
+        & (deci_success["edges_after_threshold"].fillna(0) == 0)
+    ).any():
+        log("  DECI learned nonzero weights but the fixed threshold removed all edges in some runs.")
+    constrained = deci_success[deci_success["mode"] == "constrained"]
+    if not constrained.empty and (constrained["constraint_cells_changed"].fillna(0) > 0).any():
+        log("  Constrained DECI is post-processed: constraints changed at least one cell.")
+    if (deci_success["small_data_warning"].fillna("") != "").any():
+        log("  Real-data DECI should be treated as exploratory due to small sample size.")
+    real_runs = deci_success[deci_success["dataset"] == "real"]
+    if not real_runs.empty:
+        possible = real_runs["n_variables"].astype(float) * (real_runs["n_variables"].astype(float) - 1.0)
+        dense = real_runs["edges_after_constraint_enforcement"].astype(float) >= 0.8 * possible
+        if dense.any():
+            log(
+                "  Real-data DECI fixed-threshold graphs are near-complete, "
+                "so their literature alignment is not reliable evidence of causal recovery."
+            )
+
+    synthetic = summary[
+        (summary["algorithm"].astype(str).str.startswith("deci_"))
+        & (summary["dataset"] == "synthetic_n2000")
+    ]
+    if not synthetic.empty:
+        uncon = synthetic[synthetic["mode"] == "unconstrained"]
+        cons = synthetic[synthetic["mode"] == "constrained"]
+        if not uncon.empty and not cons.empty:
+            delta_f1 = cons["f1_directed_mean"].iloc[0] - uncon["f1_directed_mean"].iloc[0]
+            delta_shd = cons["shd_mean"].iloc[0] - uncon["shd_mean"].iloc[0]
+            log(
+                f"  Synthetic constrained-minus-unconstrained DECI: "
+                f"DeltaF1={delta_f1:+.3f}, DeltaSHD={delta_shd:+.2f}."
+            )
+
+
 def main() -> int:
     """Run the full experiment matrix."""
     parser = argparse.ArgumentParser(description="Run constrained causal discovery experiments.")
@@ -1162,12 +2238,27 @@ def main() -> int:
     if "lingam" in requested_algorithms and args.skip_lingam:
         append_skipped_rows("lingam", requested_datasets, seeds, "--skip-lingam")
     if "deci" in requested_algorithms and args.skip_deci:
-        append_skipped_rows("deci", requested_datasets, seeds, "--skip-deci")
+        append_skipped_rows("deci_postproc", requested_datasets, seeds, "--skip-deci")
 
     dataset_cache = {
         dataset_name: load_dataset(dataset_name)
         for dataset_name in requested_datasets
     }
+
+    global CURRENT_DECI_THRESHOLD
+    CURRENT_DECI_THRESHOLD, deci_threshold_reason = calibrate_deci_threshold(
+        requested_algorithms=algorithms,
+        requested_datasets=requested_datasets,
+        seeds=seeds,
+        dataset_cache=dataset_cache,
+        adapter=adapter,
+    )
+    if "deci" in algorithms:
+        log(
+            f"DECI preset={get_deci_preset()['name']}; "
+            f"threshold_mode={getattr(project_config, 'DECI_THRESHOLD_MODE', 'fixed')}; "
+            f"threshold={CURRENT_DECI_THRESHOLD:.4f}; {deci_threshold_reason}"
+        )
 
     for dataset_name in requested_datasets:
         df, true_adj, columns = dataset_cache[dataset_name]
@@ -1187,10 +2278,15 @@ def main() -> int:
                     )
 
     summary = write_summary()
+    write_deci_stable_edges(adapter)
     print_final_summaries(summary)
+    print_deci_interpretation(summary)
     log(f"Total runtime: {time.perf_counter() - total_started:.1f}s")
     log(f"Results -> {RESULTS_PATH.relative_to(ROOT)}")
     log(f"Summary -> {SUMMARY_PATH.relative_to(ROOT)}")
+    log(f"DECI diagnostics -> {DECI_DIAGNOSTICS_PATH.relative_to(ROOT)}")
+    log(f"DECI threshold sweep -> {DECI_THRESHOLD_SWEEP_PATH.relative_to(ROOT)}")
+    log(f"DECI stable edges -> {DECI_STABLE_EDGES_PATH.relative_to(ROOT)}")
     return 0
 
 

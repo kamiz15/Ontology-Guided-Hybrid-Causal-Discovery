@@ -63,6 +63,31 @@ IMPUTE_THRESHOLD         = 0.30  # impute with median if ≤ 30% missing
 HIGH_CORR_THRESHOLD      = 0.97  # flag pairs above this correlation
 NEAR_CONSTANT_STD_RATIO  = 0.01  # flag if std < 1% of mean
 
+# ── DECI experiment controls ─────────────────────────────────────────────
+# Main thesis runs use a fixed threshold. Adaptive thresholding is available
+# only as a diagnostic/exploratory mode and should be labelled as such.
+DECI_THRESHOLD = 0.250
+DECI_THRESHOLD_MODE = "fixed"  # fixed | percentile | topk
+DECI_THRESHOLD_PERCENTILE = 95.0
+DECI_TOPK_EDGES = None
+DECI_BACKEND = "causica"  # causica | manual
+DECI_ALLOW_MANUAL_FALLBACK = True
+DECI_PRESET = "small_data"  # default | small_data | fast_debug
+MIN_SAMPLES_PER_VARIABLE_WARNING = 10
+
+DECI_THRESHOLD_CANDIDATES = [
+    0.001, 0.005, 0.01, 0.02, 0.03,
+    0.05, 0.075, 0.1, 0.15, 0.2,
+    0.25, 0.26, 0.27, 0.275, 0.28,
+    0.285, 0.3, 0.302, 0.304, 0.306,
+    0.308, 0.31, 0.312, 0.315, 0.32,
+    0.325, 0.33, 0.335, 0.34, 0.35,
+    0.4, 0.5,
+]
+DECI_CALIBRATE_THRESHOLD_ON_SYNTHETIC = True
+DECI_MAX_DENSITY_MULTIPLE = 1.5
+DECI_MIN_DENSITY_MULTIPLE = 0.25
+
 # ── Columns excluded from causal discovery ───────────────────
 # Add any column that is an identifier, timestamp, or
 # administrative field that should never be a causal variable.

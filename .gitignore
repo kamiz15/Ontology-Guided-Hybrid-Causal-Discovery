@@ -12,3 +12,7 @@ __pycache__/
 
 # Reports (optional - you may want these tracked)
 # reports/
+
+# Experiment scratch artifacts
+outputs/experiments/deci_work/
+outputs/metrics/deci_logs/

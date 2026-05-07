@@ -128,4 +128,199 @@ graph [
     id 31
     label "overall_esg_score"
   ]
+  edge [
+    source 0
+    target 14
+    weight 1.0
+  ]
+  edge [
+    source 0
+    target 23
+    weight 1.0
+  ]
+  edge [
+    source 3
+    target 1
+    weight 1.0
+  ]
+  edge [
+    source 6
+    target 7
+    weight 1.0
+  ]
+  edge [
+    source 8
+    target 9
+    weight 1.0
+  ]
+  edge [
+    source 8
+    target 10
+    weight 1.0
+  ]
+  edge [
+    source 9
+    target 10
+    weight 1.0
+  ]
+  edge [
+    source 10
+    target 13
+    weight 1.0
+  ]
+  edge [
+    source 11
+    target 29
+    weight 1.0
+  ]
+  edge [
+    source 12
+    target 19
+    weight 1.0
+  ]
+  edge [
+    source 13
+    target 11
+    weight 1.0
+  ]
+  edge [
+    source 14
+    target 17
+    weight 1.0
+  ]
+  edge [
+    source 14
+    target 18
+    weight 1.0
+  ]
+  edge [
+    source 14
+    target 27
+    weight 1.0
+  ]
+  edge [
+    source 17
+    target 31
+    weight 1.0
+  ]
+  edge [
+    source 18
+    target 16
+    weight 1.0
+  ]
+  edge [
+    source 18
+    target 17
+    weight 1.0
+  ]
+  edge [
+    source 19
+    target 2
+    weight 1.0
+  ]
+  edge [
+    source 19
+    target 8
+    weight 1.0
+  ]
+  edge [
+    source 19
+    target 20
+    weight 1.0
+  ]
+  edge [
+    source 19
+    target 22
+    weight 1.0
+  ]
+  edge [
+    source 19
+    target 27
+    weight 1.0
+  ]
+  edge [
+    source 21
+    target 6
+    weight 1.0
+  ]
+  edge [
+    source 21
+    target 25
+    weight 1.0
+  ]
+  edge [
+    source 21
+    target 26
+    weight 1.0
+  ]
+  edge [
+    source 21
+    target 27
+    weight 1.0
+  ]
+  edge [
+    source 22
+    target 26
+    weight 1.0
+  ]
+  edge [
+    source 23
+    target 5
+    weight 1.0
+  ]
+  edge [
+    source 23
+    target 21
+    weight 1.0
+  ]
+  edge [
+    source 23
+    target 25
+    weight 1.0
+  ]
+  edge [
+    source 24
+    target 1
+    weight 1.0
+  ]
+  edge [
+    source 24
+    target 31
+    weight 1.0
+  ]
+  edge [
+    source 25
+    target 0
+    weight 1.0
+  ]
+  edge [
+    source 27
+    target 6
+    weight 1.0
+  ]
+  edge [
+    source 29
+    target 13
+    weight 1.0
+  ]
+  edge [
+    source 30
+    target 14
+    weight 1.0
+  ]
+  edge [
+    source 30
+    target 15
+    weight 1.0
+  ]
+  edge [
+    source 31
+    target 15
+    weight 1.0
+  ]
+  edge [
+    source 31
+    target 30
+    weight 1.0
+  ]
 ]

@@ -128,4 +128,129 @@ graph [
     id 31
     label "overall_esg_score"
   ]
+  edge [
+    source 0
+    target 28
+    weight 1.0
+  ]
+  edge [
+    source 1
+    target 0
+    weight 1.0
+  ]
+  edge [
+    source 2
+    target 28
+    weight 1.0
+  ]
+  edge [
+    source 6
+    target 7
+    weight 1.0
+  ]
+  edge [
+    source 9
+    target 13
+    weight 1.0
+  ]
+  edge [
+    source 10
+    target 13
+    weight 1.0
+  ]
+  edge [
+    source 12
+    target 19
+    weight 1.0
+  ]
+  edge [
+    source 12
+    target 27
+    weight 1.0
+  ]
+  edge [
+    source 13
+    target 11
+    weight 1.0
+  ]
+  edge [
+    source 14
+    target 17
+    weight 1.0
+  ]
+  edge [
+    source 15
+    target 30
+    weight 1.0
+  ]
+  edge [
+    source 17
+    target 18
+    weight 1.0
+  ]
+  edge [
+    source 17
+    target 30
+    weight 1.0
+  ]
+  edge [
+    source 18
+    target 14
+    weight 1.0
+  ]
+  edge [
+    source 19
+    target 22
+    weight 1.0
+  ]
+  edge [
+    source 20
+    target 27
+    weight 1.0
+  ]
+  edge [
+    source 21
+    target 26
+    weight 1.0
+  ]
+  edge [
+    source 21
+    target 27
+    weight 1.0
+  ]
+  edge [
+    source 23
+    target 0
+    weight 1.0
+  ]
+  edge [
+    source 23
+    target 25
+    weight 1.0
+  ]
+  edge [
+    source 24
+    target 31
+    weight 1.0
+  ]
+  edge [
+    source 28
+    target 7
+    weight 1.0
+  ]
+  edge [
+    source 29
+    target 11
+    weight 1.0
+  ]
+  edge [
+    source 29
+    target 13
+    weight 1.0
+  ]
+  edge [
+    source 30
+    target 31
+    weight 1.0
+  ]
 ]
