@@ -1,0 +1,215 @@
+Parsing summary
+===============
+
+no: n_parsed=110, n_nan=0, n_warnings=0
+lei_mfi_code_for_branches: n_parsed=110, n_nan=0, n_warnings=0
+type: n_parsed=110, n_nan=0, n_warnings=0
+banks: n_parsed=110, n_nan=0, n_warnings=0
+ground_for_significance: n_parsed=103, n_nan=7, n_warnings=0
+scope_1_emissions_tco2e: n_parsed=98, n_nan=12, n_warnings=2
+scope_2_emissions_tco2e: n_parsed=98, n_nan=12, n_warnings=6
+scope_3_emissions_tco2e: n_parsed=100, n_nan=10, n_warnings=14
+emission_reduction_policy_score: n_parsed=80, n_nan=30, n_warnings=30
+renewable_energy_share: n_parsed=90, n_nan=20, n_warnings=3
+community_investment_eur: n_parsed=95, n_nan=15, n_warnings=19
+diversity_representation: n_parsed=95, n_nan=15, n_warnings=0
+health_safety_score: n_parsed=76, n_nan=34, n_warnings=30
+board_strategy_esg_oversight_score: n_parsed=81, n_nan=29, n_warnings=29
+green_financing_eur: n_parsed=102, n_nan=8, n_warnings=23
+total_revenue_eur: n_parsed=102, n_nan=8, n_warnings=2
+reporting_quality_score: n_parsed=86, n_nan=24, n_warnings=24
+
+Renewable target-only cells
+---------------------------
+row_index=8, column=renewable_energy_share, raw_value=90% (Target)
+
+Currency FX diagnostics
+-----------------------
+non_eur_conversions=56
+eur_default_no_token=4
+unsupported_currencies=3
+
+Warnings
+--------
+row_index=58, column=scope_1_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=5,067,100 t CO₂e (Financed) / 1.10 t CO₂e/€m (Operational)
+row_index=97, column=scope_1_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=41,198.54 t CO₂e (Group) / 2,529.77 t CO₂e (Bank)
+row_index=3, column=scope_2_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=4,909 t CO₂e (Location-based) / 480 t CO₂e (Market-based)
+row_index=58, column=scope_2_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=1,607,100 t CO₂e (Financed) / 9.01 t CO₂e/€m (Operational)
+row_index=82, column=scope_2_emissions_tco2e, warning=multiple numeric values with no explicit unit; first value used, raw_value=229,954 mtCO₂e (Location-based); 31,804 mtCO₂e (Market-based)
+row_index=87, column=scope_2_emissions_tco2e, warning=multiple numeric values with no explicit unit; first value used, raw_value=96,117 mt CO₂e (Location-based); 1,289 mt CO₂e (Market-based)
+row_index=97, column=scope_2_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=62,839.80 t CO₂e (Group) / 3,411.95 t CO₂e (Bank)
+row_index=98, column=scope_2_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=51,829 t CO₂e (Location-based) / 146 t CO₂e (Market-based)
+row_index=9, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=11,678 t CO₂e (Operations) / 28,400,000 t CO₂e (Financed)
+row_index=18, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=7,165 t CO₂e (Proprietary) / 14.96 million t CO₂e (Financed)
+row_index=25, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=14,659.27 t CO₂e (Operational) / 1.7 million t CO₂e (Financed)
+row_index=44, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=435,757 t CO₂e (Org) / 53.9m t CO₂e (Financed)
+row_index=46, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=84 t CO₂e/M€ (Intensity)
+row_index=52, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=1,286,521 t CO₂e (Operational) / 63.5 MtCO2e/y (Financed)
+row_index=58, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=24,313,100 t CO₂e (Financed) / 1.90 t CO₂e/€m (Operational)
+row_index=72, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=81,366 t CO₂e (Avoided/Reduced)
+row_index=76, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=3,522 t CO₂e (Operational) / 40.1 million t CO₂e (Financed)
+row_index=81, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=3,451 t CO₂e (Direct) / 11.21M t CO₂e (Financed)
+row_index=82, column=scope_3_emissions_tco2e, warning=multiple numeric values with no explicit unit; first value used, raw_value=98,289 mtCO₂e (Operational); 4,558,983 tCO₂e (Financed - 2022)
+row_index=84, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=58,337 t CO₂e (Non-financed) / 16,105 kt CO₂e (Financed)
+row_index=87, column=scope_3_emissions_tco2e, warning=multiple numeric values with no explicit unit; first value used, raw_value=19,825 mt CO₂e (Business Travel); 3.3M mt CO₂e (Oil & Gas 2020 Baseline)
+row_index=89, column=scope_3_emissions_tco2e, warning=multiple GHG values found; first value used, raw_value=16,114 t CO₂e (Internal Ops) / 16,503,102 t CO₂e (Financed)
+row_index=1, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=2, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Documented initiatives: Car fleet replacement with EVs, office space optimization, and transition to renewable energy.
+row_index=8, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative (See Comments)
+row_index=21, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Approach to Zero™
+row_index=22, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: Detailed and targeted
+row_index=29, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: Robust (Target-driven)
+row_index=33, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Documented/Active
+row_index=36, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Documented: 2022-2030 Energy Plan
+row_index=41, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative description of targets and specific actions
+row_index=42, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Documented: Net Zero Commitment
+row_index=51, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Goal: Climate neutrality by 2045
+row_index=54, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Documented Strategy
+row_index=57, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative Assessment
+row_index=63, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Documented Ambition
+row_index=66, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: Documented Targets
+row_index=68, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=69, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: Comprehensive / Targeted
+row_index=71, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: 1.5°C Alignment / Decarbonization
+row_index=74, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Net Zero ambition by 2040 (SBTi-validated)
+row_index=76, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Goal: -30% (Ops) / Neutrality (Ops)
+row_index=80, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=83, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative assessment
+row_index=86, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: Documented as Science-Based Targets (SBTi) commitment
+row_index=88, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: Strategic commitment to Paris Agreement
+row_index=91, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=-25% by 2030 (Portfolio)
+row_index=100, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: Documented as "Ambitious"
+row_index=101, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative: Target to reduce internal carbon footprint by 50% by 2030 vs 2019.
+row_index=102, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=46.2% reduction target by 2030
+row_index=104, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=45.9 million metric t CO₂e (Fossil Fuels sector)
+row_index=109, column=emission_reduction_policy_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=8, column=renewable_energy_share, warning=target-only renewable value ignored, raw_value=90% (Target)
+row_index=44, column=renewable_energy_share, warning=renewable share outside [0, 1], raw_value=€3,413m (Total) / 28% (Real Estate)
+row_index=45, column=renewable_energy_share, warning=renewable share outside [0, 1], raw_value=€4,559 million
+row_index=2, column=community_investment_eur, warning=currency value failed to parse, raw_value=Qualitative: Volunteering programs, donations, fundraising, grants, and sponsorships.
+row_index=4, column=community_investment_eur, warning=currency value failed to parse, raw_value=€ or local currency
+row_index=6, column=community_investment_eur, warning=multiple currency amounts summed, raw_value=€118,000 (Grants); €700,000+ (Scholarships)
+row_index=7, column=community_investment_eur, warning=currency value failed to parse, raw_value=Moderate (Qualitative)
+row_index=19, column=community_investment_eur, warning=currency value failed to parse, raw_value=COP 3,453,667,730
+row_index=28, column=community_investment_eur, warning=currency value failed to parse, raw_value=Qualitative
+row_index=36, column=community_investment_eur, warning=currency value failed to parse, raw_value=(Specific total € not reported in TCFD)
+row_index=41, column=community_investment_eur, warning=multiple currency amounts summed, raw_value=$2,000,000 (Regional) / €250,000 (Local)
+row_index=58, column=community_investment_eur, warning=multiple currency amounts summed, raw_value=€17 million (Sponsorships) / €12 million (egg accelerator)
+row_index=60, column=community_investment_eur, warning=multiple currency amounts summed, raw_value=+3B(Philanthropic);+19B (Community Loans/Investments)
+row_index=65, column=community_investment_eur, warning=currency value failed to parse, raw_value=€ or local currency
+row_index=68, column=community_investment_eur, warning=currency value failed to parse, raw_value=€ or local currency
+row_index=69, column=community_investment_eur, warning=currency value failed to parse, raw_value=USD ($)
+row_index=72, column=community_investment_eur, warning=currency value failed to parse, raw_value=(Blank)
+row_index=80, column=community_investment_eur, warning=currency value failed to parse, raw_value=€
+row_index=89, column=community_investment_eur, warning=multiple currency amounts summed, raw_value=10,415 volunteer hours / 216,000 youth supported
+row_index=96, column=community_investment_eur, warning=currency value failed to parse, raw_value=RLB Social Fund
+row_index=100, column=community_investment_eur, warning=currency value failed to parse, raw_value=€
+row_index=109, column=community_investment_eur, warning=currency value failed to parse, raw_value=Local Currency
+row_index=1, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=2, column=health_safety_score, warning=ordinal value unmapped, raw_value=Documented: High compliance with legal standards; 9 recordable accidents; 0 fatalities.
+row_index=8, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative (See Comments)
+row_index=22, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: Regulatory aligned & audited
+row_index=29, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: Comprehensive management
+row_index=33, column=health_safety_score, warning=ordinal value unmapped, raw_value=Documented/Comprehensive
+row_index=36, column=health_safety_score, warning=ordinal value unmapped, raw_value=Documented: UN EN ISO 14001/50001 and WELL/LEED certifications
+row_index=41, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative description of wellness program
+row_index=42, column=health_safety_score, warning=ordinal value unmapped, raw_value=Documented: Global Rating
+row_index=51, column=health_safety_score, warning=ordinal value unmapped, raw_value=Corporate Health Award (Excellence)
+row_index=54, column=health_safety_score, warning=ordinal value unmapped, raw_value=Documented Initiatives
+row_index=57, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative Assessment
+row_index=63, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative Feedback
+row_index=65, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=66, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: Documented "Vitality" approach
+row_index=68, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=69, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: High Engagement
+row_index=71, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: Structured Management
+row_index=74, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: Integrated in GII
+row_index=76, column=health_safety_score, warning=ordinal value unmapped, raw_value=Comprehensive Management
+row_index=80, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=83, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative assessment
+row_index=86, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: Documented Management System
+row_index=88, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: ISO 45001 alignment / BGM system
+row_index=91, column=health_safety_score, warning=ordinal value unmapped, raw_value=3.2% / 0.6
+row_index=100, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative: High (Validated by Social Barometer)
+row_index=101, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=102, column=health_safety_score, warning=ordinal value unmapped, raw_value=Not qualitatively rated
+row_index=104, column=health_safety_score, warning=ordinal value unmapped, raw_value=29.5 % (Director level and above)
+row_index=109, column=health_safety_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=1, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=2, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Documented: Integrated governance with MB and SB oversight; dedicated ESG Working Group.
+row_index=8, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative (See Comments)
+row_index=21, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Comprehensive Governance Framework
+row_index=22, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Formalized structure
+row_index=29, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Multi-level Governance
+row_index=33, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Documented/Structured
+row_index=36, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Documented: Formal structure with BoD and Internal Committees
+row_index=41, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative description of governance roles
+row_index=42, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Documented: Board Oversight
+row_index=51, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Board-level responsibility
+row_index=54, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=ESG Committee
+row_index=57, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative Assessment
+row_index=63, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Formal Board Oversight
+row_index=66, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Formal Committee Oversight
+row_index=68, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=69, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Multi-level Oversight
+row_index=71, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Executive Responsibility
+row_index=74, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Fully integrated
+row_index=76, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Executive responsibility
+row_index=80, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=83, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative assessment
+row_index=86, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Documented via SAB and Board committees
+row_index=88, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Comprehensive oversight
+row_index=91, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Board + ESG Committee
+row_index=100, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Structured and Integrated
+row_index=101, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative: Board validates climate strategy and oversees implementation.
+row_index=102, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Formalized Committee Structure
+row_index=109, column=board_strategy_esg_oversight_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=9, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=SEK 74.2 billion (Sustainable financing) / SEK 259 billion (Activity Index volume)
+row_index=18, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=€15,000 million (2023) / €38,600 million (Cumulative)
+row_index=19, column=green_financing_eur, warning=currency value failed to parse, raw_value=COP 383,886 Million
+row_index=33, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=€117 billion (Loans) / €67 billion (Bonds)
+row_index=33, column=green_financing_eur, warning=suspected over-parse for currency value, raw_value=€117 billion (Loans) / €67 billion (Bonds)
+row_index=34, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=$157,947 Million (2022); $410,098 Million (Cumulative)
+row_index=39, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=€50,813 M (Mobilized); €9,330 M (Green financing)
+row_index=41, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=$155m (Turnover) / $282m (CapEx)
+row_index=43, column=green_financing_eur, warning=suspected over-parse for currency value, raw_value=€238bn
+row_index=52, column=green_financing_eur, warning=suspected over-parse for currency value, raw_value=€ 279 billion (Cumulative)
+row_index=66, column=green_financing_eur, warning=suspected over-parse for currency value, raw_value=€115 billion
+row_index=68, column=green_financing_eur, warning=currency value failed to parse, raw_value=€ or local currency
+row_index=69, column=green_financing_eur, warning=currency value failed to parse, raw_value=USD ($)
+row_index=70, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=€19.3 billion (Env) / €7.4 billion (Social)
+row_index=80, column=green_financing_eur, warning=currency value failed to parse, raw_value=€
+row_index=84, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=€1,981 million (RES Balances) / €468 million (Green RRF)
+row_index=89, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=EUR 135bn (Facilitated) / EUR 12,108m (Green Loans)
+row_index=89, column=green_financing_eur, warning=suspected over-parse for currency value, raw_value=EUR 135bn (Facilitated) / EUR 12,108m (Green Loans)
+row_index=95, column=green_financing_eur, warning=multiple currency amounts summed, raw_value=11,049 Mio. € (Total); 5,525 Mio. € (Green)
+row_index=100, column=green_financing_eur, warning=currency value failed to parse, raw_value=€
+row_index=101, column=green_financing_eur, warning=suspected over-parse for currency value, raw_value=€300 billion
+row_index=104, column=green_financing_eur, warning=currency value failed to parse, raw_value=Very Good (Qualitative)
+row_index=108, column=green_financing_eur, warning=currency value failed to parse, raw_value=CZK (Not Aggregated)
+row_index=9, column=total_revenue_eur, warning=multiple currency amounts summed, raw_value=SEK 80,193 million (Operating Income) / SEK 174,354 million (Gross Income)
+row_index=19, column=total_revenue_eur, warning=currency value failed to parse, raw_value=COP 3,187.36 Billion (MMM)
+row_index=1, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=2, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Documented: ESRS-aligned on a voluntary basis; No external assurance.
+row_index=8, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative (See Comments)
+row_index=21, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Third-party Verified
+row_index=22, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative: High (Assured/Standards-based)
+row_index=29, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative: High (Verified)
+row_index=33, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=High / Transitioning
+row_index=41, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative description of compliance
+row_index=42, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Documented: Externally Assured
+row_index=54, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Regulatory Compliance
+row_index=57, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative Assessment
+row_index=68, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=69, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative: High / Independent
+row_index=71, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative: GRI/TCFD Compliant
+row_index=74, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative: TCFD & TNFD aligned
+row_index=76, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=GRI-aligned / Audited NFE
+row_index=80, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative
+row_index=83, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative assessment
+row_index=86, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative: High (External standards applied)
+row_index=91, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=GRI / Externally Assured
+row_index=100, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative: High (Validated)
+row_index=101, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative: Aligned with TCFD and GFANZ recommendations.
+row_index=104, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=EUR 53.9 billion
+row_index=109, column=reporting_quality_score, warning=ordinal value unmapped, raw_value=Qualitative

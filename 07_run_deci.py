@@ -175,12 +175,19 @@ def run_deci(
     noise_type : 'gaussian' or 'spline'
     edge_threshold : probability threshold to binarize the learned graph
     """
-    try:
-        from causica.lightning.modules.deci_module import DECIModule
-        from causica.datasets.causica_dataset_format import Variable
-        CAUSICA_AVAILABLE = True
-    except ImportError:
+    causica_import_error = None
+    force_manual = os.environ.get("ESG_FORCE_MANUAL_DECI") == "1"
+    if force_manual:
         CAUSICA_AVAILABLE = False
+        causica_import_error = RuntimeError("ESG_FORCE_MANUAL_DECI=1")
+    else:
+        try:
+            from causica.lightning.modules.deci_module import DECIModule
+            from causica.datasets.causica_dataset_format import Variable
+            CAUSICA_AVAILABLE = True
+        except Exception as exc:
+            CAUSICA_AVAILABLE = False
+            causica_import_error = exc
 
     mode_label = "constrained" if constraint_matrix is not None else "unconstrained"
     print(f"\n{'=' * 60}")
@@ -207,6 +214,8 @@ def run_deci(
     if not CAUSICA_AVAILABLE:
         print("\n  [!] causica not installed. Falling back to manual DECI-like")
         print("      implementation using PyTorch directly.")
+        if causica_import_error is not None:
+            print(f"      Causica import error: {causica_import_error}")
         print("      To install: pip install causica==0.4.5 --no-deps")
         print("      Requires Python 3.10\n")
         return _run_deci_manual(
@@ -355,14 +364,12 @@ def _run_deci_manual(
             # Zero diagonal (no self-loops)
             adj_soft = adj_soft * (1 - torch.eye(n_vars, device=dev))
 
-            # Apply constraint matrix: clamp forbidden edges toward 0
+            # Apply forbidden constraints during training. Required edges are
+            # enforced at final extraction; injecting hard required edges here
+            # can make the DAG penalty very slow or unstable.
             if constraint_tensor is not None:
-                # Forbidden: push toward 0
                 forbidden_mask = (constraint_tensor == -1).float()
                 adj_soft = adj_soft * (1 - forbidden_mask)
-                # Required: push toward 1
-                required_mask = (constraint_tensor == 1).float()
-                adj_soft = adj_soft + required_mask * (1 - adj_soft) * 0.9
 
             # Forward pass through SEM
             means = sem(batch_x, adj_soft)
@@ -423,9 +430,18 @@ def _run_deci_manual(
         if constraint_tensor is not None:
             forbidden_mask = (constraint_tensor == -1).float()
             edge_probs = edge_probs * (1 - forbidden_mask)
+            required_mask = (constraint_tensor == 1).float()
+            edge_probs = edge_probs + required_mask * (1 - edge_probs)
 
         edge_probs_np = edge_probs.cpu().numpy()
         directed_adj = (edge_probs_np > edge_threshold).astype(int)
+        if constraint_tensor is not None:
+            constraint_np = constraint_tensor.cpu().numpy()
+            directed_adj[constraint_np == -1] = 0
+            required_rows, required_cols = np.where(constraint_np == 1)
+            directed_adj[required_rows, required_cols] = 1
+            directed_adj[required_cols, required_rows] = 0
+        np.fill_diagonal(directed_adj, 0)
 
     n_edges = count_edges(directed_adj)
     print(f"\n  Final graph: {n_edges} directed edges (threshold={edge_threshold})")

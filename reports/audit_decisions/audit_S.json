@@ -1,0 +1,236 @@
+[
+  {
+    "row_id": "customer_satisfaction_score -> turnover_rate",
+    "decision": "no",
+    "reasoning": "The meta-analysis paper explicitly maps 'retention' to customer-level outcomes (customer retention, WOM, spending), not employee turnover; the variable turnover_rate in the dataset refers to employee turnover, making this a critical mapping error.",
+    "confidence": "high",
+    "concerns": "The quote 'CS has a strong association with retention (r = 0.60)' refers to customer retention behavior, not employee turnover_rate. The paper's own framework (Fig. 1) lists retention as a customer-level outcome alongside WOM and spending. Mapping customer retention to the employee turnover_rate variable is definitionally incorrect.",
+    "paper_verified": "yes",
+    "modification_note": "N/A — reject outright. If a customer_retention variable existed in the dataset, this would be approvable. As-is, the mapping is wrong."
+  },
+  {
+    "row_id": "diversity_representation -> net_profit_margin",
+    "decision": "yes",
+    "reasoning": "The paper (gender_diversity_ibex35_financial_performance) is verified as a firm-level fsQCA study of IBEX 35 companies finding that female presence in senior management is consistently associated with high net profit in most sectors, and the direction (diversity → profit) is causally plausible with no reverse-causality concern raised.",
+    "confidence": "medium",
+    "concerns": "fsQCA is configurational, not regression-based; the effect is sector-dependent and not universal. The paper explicitly notes equifinality and context-dependence. Confidence is medium rather than high due to small-N configurational design.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "fair_wage_gap -> net_profit_margin",
+    "decision": "yes",
+    "reasoning": "The paper (gender_diversity_ibex35_financial_performance) is verified and states 'a low pay gap (GPG = 1) is positively related to financial outcomes,' supporting the direction that a lower fair_wage_gap associates with higher net_profit_margin at firm level.",
+    "confidence": "medium",
+    "concerns": "fsQCA methodology; effect is sector-specific (technology and real estate show high GPG alongside high profits, suggesting the relationship is not universal). The constraint should be treated as conditional, not universal.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "turnover_rate -> customer_satisfaction_score",
+    "decision": "yes",
+    "reasoning": "The Hancock (2013) meta-analysis is verified and reports executive turnover correlating at r = -.75 with customer satisfaction and r = -.73 with profitability, with the direction (turnover causes lower customer satisfaction) being causally plausible and temporally ordered.",
+    "confidence": "medium",
+    "concerns": "The specific quote is from a banking-sector subsample (n=31), limiting generalizability. The correlation is very strong (r=-.75) but the meta-analysis does not establish formal causal identification for this specific sub-study. Tier 2 auto-approval is appropriate given the structural/temporal plausibility.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "customer_satisfaction_score -> roa_eat",
+    "decision": "yes",
+    "reasoning": "Both cited papers are verified: the meta-analysis (r = 0.22 for CS→ROA across 245 articles) and the dynamic panel paper (Granger causality via Arellano-Bond GMM) both support a positive, temporally-ordered causal direction from customer satisfaction to ROA.",
+    "confidence": "high",
+    "concerns": "The meta-analysis is correlational; the panel paper uses Granger causality which is not structural causality. However, two independent papers with consistent direction and the panel paper's explicit causal language ('there is some evidence of causality') justify approval.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "health_safety_score -> injury_frequency_rate",
+    "decision": "no",
+    "reasoning": "The proposed direction is causally backwards: in the workplace_safety_bank_intervention paper, the actual causal chain is bank intervention (following covenant violation) → reduced injury_frequency_rate; health_safety_score as used in that paper is a bank-level KLD employee relationship score that moderates the intervention effect, not a firm-level OSH investment variable that causes injuries.",
+    "confidence": "high",
+    "concerns": "The cause variable health_safety_score is mapped from the bank's KLD employee relationship score (a moderator), not from a firm-level safety investment variable. The South Korea paper (financial_performance_occupational_injury_south_korea) does show OSH investment → injury spending, but that is a bidirectional relationship, not a clean health_safety_score → injury_frequency_rate causal arrow. The direction as stated (health_safety_score causes injury_frequency_rate) implies higher safety scores cause more injuries, which is the wrong sign and wrong causal structure.",
+    "paper_verified": "yes",
+    "modification_note": "Should be respecified as: bank_intervention → injury_frequency_rate (negative), with union_membership as a positive moderator. Alternatively, if health_safety_score is reinterpreted as firm-level OSH investment, the direction should be health_safety_score → injury_frequency_rate (negative), but this requires re-mapping the cause variable."
+  },
+  {
+    "row_id": "turnover_rate -> roa_eat",
+    "decision": "yes",
+    "reasoning": "Both cited papers are verified: Li et al. find TURNOVER_HIGH coefficients consistently negative and significant at 1% for ROA(t+1) across all panels, and the Hancock meta-analysis confirms r = -.15 across a large multi-study sample; the direction (high turnover → lower future ROA) is causally plausible with a 1-quarter lag.",
+    "confidence": "high",
+    "concerns": "Reverse causality is contested (poor performance may cause turnover), but the Li et al. paper uses lagged turnover predicting future ROA, which addresses the temporal ordering concern. The nonlinearity (low turnover may be beneficial) should be noted as a caveat.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "union_membership -> turnover_rate",
+    "decision": "yes",
+    "reasoning": "The union_density_productivity_wages_norway paper is verified and reports a statistically significant negative coefficient for union density on separation rates (-0.00747***, SE=0.00196), and the unionization_productivity_channels paper provides the theoretical mechanism (higher wages reduce quit incentives); direction is causally plausible.",
+    "confidence": "high",
+    "concerns": "The Norway paper uses union density (a continuous measure) rather than a binary union_membership indicator; the effect may be context-specific to Norway's institutional setting. The theoretical paper is supportive but not independently empirical.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "collective_bargaining_coverage -> gross_profit_margin",
+    "decision": "modify",
+    "reasoning": "The collective_agreements_productivity_norway paper is verified and does show collective agreement presence increases productivity, but the effect is conditional: without a collective agreement, higher union density reduces productivity; the collective agreement moderates and reverses this negative effect rather than having a simple direct positive effect.",
+    "confidence": "high",
+    "concerns": "The causal claim is not a simple direct arrow but an interaction effect: collective_bargaining_coverage moderates the union_membership → gross_profit_margin relationship. A standalone collective_bargaining_coverage → gross_profit_margin constraint without conditioning on union density level may be misleading.",
+    "paper_verified": "yes",
+    "modification_note": "Approve as a conditional constraint: collective_bargaining_coverage → gross_profit_margin (positive), but only when union_membership is above the threshold that triggers formal bargaining (~10% of workers). Add caveat that without sufficient union density, collective agreements alone may have weaker effects."
+  },
+  {
+    "row_id": "customer_satisfaction_score -> net_profit_margin",
+    "decision": "yes",
+    "reasoning": "The customer_satisfaction_stock_returns_earnings paper is verified and explicitly states customer satisfaction has a significant effect on earnings (EPS and earnings surprises), with the effect surviving Fama-French Five-Factor controls; the direction (CS → earnings/profit) is causally plausible and temporally ordered.",
+    "confidence": "high",
+    "concerns": "The paper's primary outcome is stock returns and earnings surprises, not net_profit_margin directly; earnings are used as a mediator. The mapping to net_profit_margin is reasonable but slightly indirect. The paper also notes 'it is not always the case that high customer satisfaction has a positive impact on profitability.'",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "diversity_representation -> gross_profit_margin",
+    "decision": "yes",
+    "reasoning": "The workforce_diversity_rd_innovation_firm_value paper is verified and reports that firms with above-median gender diversity have employee productivity 30% higher than the industry average, with IV identification (state childcare funding × Democratic inclination) addressing endogeneity; productivity maps directly to gross_profit_margin.",
+    "confidence": "high",
+    "concerns": "Productivity is measured as sales and gross profits per employee, which is a reasonable proxy for gross_profit_margin. The IV strategy is credible. Effect is amplified in firms with supportive organizational culture (MeToo shock), suggesting context-dependence.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "diversity_representation -> human_rights_violations",
+    "decision": "yes",
+    "reasoning": "The workforce_diversity_rd_innovation_firm_value paper is verified and reports coef. = -0.116 (t = -4.33) for number of employee violations and coef. = -0.965 (t = -3.87) for severity, with IV identification; the direction (higher diversity → fewer violations) is causally plausible and empirically supported.",
+    "confidence": "high",
+    "concerns": "'Employee violations' in the paper refers to labor law violations from Good Jobs First data, which maps reasonably to human_rights_violations. The IV addresses endogeneity. Effect is robust across tokenism and critical mass subsamples.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "diversity_representation -> roa_eat",
+    "decision": "modify",
+    "reasoning": "The gender_diversity_firm_performance_legitimacy paper is verified but explicitly states that gender diversity by itself does NOT have a statistically significant impact on ROA; the effect is entirely conditional on normative and regulatory legitimacy — positive under high legitimacy (b=14.7) and negative under low legitimacy (b=-29.2).",
+    "confidence": "high",
+    "concerns": "The top_quote selectively reports only the high-legitimacy condition. The paper states: 'Gender diversity by itself does not have a statistically significant impact on either revenue or market valuation.' Approving this as an unconditional positive constraint would misrepresent the paper's findings.",
+    "paper_verified": "yes",
+    "modification_note": "Approve only as a conditional constraint: diversity_representation → roa_eat (positive) ONLY when country-level normative and regulatory legitimacy of gender diversity is high. Under low legitimacy, the effect is negative. The constraint should be flagged as context-dependent and not used as a universal positive prior."
+  },
+  {
+    "row_id": "diversity_representation -> tobins_q",
+    "decision": "yes",
+    "reasoning": "The workforce_diversity_rd_innovation_firm_value paper is verified and provides IV-identified evidence that workforce gender diversity increases firm value (Tobin's Q), with HIGH_WOMEN increasing Tobin's Q by 16.3% in tokenism firms and 6.7% in critical mass firms; the direction is causally plausible.",
+    "confidence": "high",
+    "concerns": "Effect magnitude varies by board diversity context (tokenism vs. critical mass). The gender_diversity_firm_performance_legitimacy paper shows Tobin's Q effect is also conditional on legitimacy (b=0.69 under high legitimacy, b=-0.89 under low). The two papers together suggest the positive effect is robust in high-legitimacy/supportive-culture contexts but contested otherwise.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "diversity_representation -> total_revenue_eur",
+    "decision": "modify",
+    "reasoning": "The gender_diversity_firm_performance_legitimacy paper is verified but explicitly states that gender diversity alone does not significantly affect revenue; the effect is moderated by normative and regulatory legitimacy, making this an unconditional constraint that misrepresents the paper.",
+    "confidence": "high",
+    "concerns": "The paper states: 'Gender diversity by itself does not have a statistically significant impact on either revenue or market valuation.' The revenue effect only emerges under high normative legitimacy. Approving as an unconditional constraint would be incorrect.",
+    "paper_verified": "yes",
+    "modification_note": "Approve only as a conditional constraint: diversity_representation → total_revenue_eur (positive) conditional on high normative legitimacy of gender diversity in the firm's institutional environment. Flag as context-dependent."
+  },
+  {
+    "row_id": "diversity_representation -> union_membership",
+    "decision": "yes",
+    "reasoning": "The workforce_diversity_rd_innovation_firm_value paper is verified and explicitly states 'gender-diverse firms have lower unionization rates, which in turn contribute to increased innovation,' with the direction (higher diversity → lower union membership) being empirically supported and causally plausible.",
+    "confidence": "medium",
+    "concerns": "This finding is reported in the appendix as a supplementary mechanism, not the main result. The causal identification for this specific sub-claim relies on the same IV as the main analysis but is not the primary focus. The effect_sign is negative (diversity reduces union membership), which should be noted.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "gross_profit_margin -> injury_frequency_rate",
+    "decision": "yes",
+    "reasoning": "The financial_performance_occupational_injury_south_korea paper is verified and reports that as operating profit and tangible assets increase, occupational injury incidence decreases (negative direction), supporting the constraint that higher gross_profit_margin causes lower injury_frequency_rate.",
+    "confidence": "medium",
+    "concerns": "The paper acknowledges bidirectionality (injuries also reduce financial performance), and the identification strategy is multilevel Poisson/logistic regression without strong causal identification (no IV or RDD). The South Korean workplace panel survey context may limit generalizability. The paper also shows some financial variables (interest income, value added per person) are positively associated with injury risk, suggesting the relationship is not uniformly negative across all financial metrics.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "injury_frequency_rate -> net_profit_margin",
+    "decision": "yes",
+    "reasoning": "The workplace_safety_bank_intervention paper is verified and states 'Workplace injuries result in substantial costs such as medical expenses, insurance premiums, and potential litigation, increasing operational and financial risks,' supporting the direction that higher injury rates reduce net profit margins.",
+    "confidence": "medium",
+    "concerns": "This is a mechanism/literature-review claim in the paper, not a directly estimated coefficient. The paper cites Cohn & Wardlaw (2016) for this claim rather than estimating it directly. The evidence_type should be empirical_qualitative/theoretical rather than empirical_quantitative. The constraint is directionally sound but the supporting evidence is indirect.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "soc_pillar_score -> asset_growth_pct",
+    "decision": "no",
+    "reasoning": "Document 347342b9-f621-4713-b750-45b4a3e8da1f could not be retrieved or verified from the corpus; the quote 'Disaggregated analysis reveals that E improves asset turnover and Tobin's Q; S boosts ROE and growth in net fixed assets' cannot be confirmed as accurate, and the paper cannot be assessed for methodology, sample, or causal identification quality.",
+    "confidence": "high",
+    "concerns": "Repeated retrieval attempts failed to surface this specific document ID. The claim uses an aggregate pillar score (soc_pillar_score) which is explicitly low-priority per extraction rules. Without paper verification, the quote accuracy, causal identification strategy, and sample scope are unknown. Cannot approve an unverified source.",
+    "paper_verified": "no",
+    "modification_note": "N/A — reject pending paper verification. If the paper can be retrieved and shows firm-level panel data with adequate causal identification, reconsider."
+  },
+  {
+    "row_id": "soc_pillar_score -> roe_eat",
+    "decision": "no",
+    "reasoning": "Same as above: document 347342b9-f621-4713-b750-45b4a3e8da1f could not be retrieved or verified; the quote cannot be confirmed, and the aggregate soc_pillar_score variable is explicitly low-priority per extraction rules.",
+    "confidence": "high",
+    "concerns": "Unverifiable source document. Aggregate pillar score (soc_pillar_score) is low-priority per schema rules. Without knowing the paper's methodology, sample, or causal identification, this constraint cannot be approved.",
+    "paper_verified": "no",
+    "modification_note": "N/A — reject pending paper verification."
+  },
+  {
+    "row_id": "training_hours -> gross_profit_margin",
+    "decision": "yes",
+    "reasoning": "The training_productivity_wages_belgium paper is verified and reports that an extra hour of training yields a 0.44% contemporaneous productivity premium (vs. 0.24% wage premium), with endogeneity controlled via GMM; the direction (training → productivity/gross profit) is causally plausible and temporally ordered.",
+    "confidence": "high",
+    "concerns": "The productivity premium (0.44%) exceeds the wage premium (0.24%), implying employers appropriate part of the training return, which supports the gross_profit_margin mapping. The Belgian firm-level context may limit generalizability. The GMM approach addresses but does not fully eliminate endogeneity concerns.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "training_hours -> turnover_rate",
+    "decision": "modify",
+    "reasoning": "The training_productivity_wages_belgium paper is verified but the quote itself contradicts a simple negative training→turnover constraint: quit rates are 'unaffected' by trained workers at lag 1, and the share of trained employees lagged two periods has a 'positive and significant impact on quit rates,' meaning training may increase voluntary turnover.",
+    "confidence": "high",
+    "concerns": "The paper explicitly states: 'Quit rates however seem to be unaffected by the number of trained workers. The share of trained employees lagged two periods has even a positive and significant impact on the quit rates.' This is the opposite of the typical assumption. The paper interprets this as evidence that training is general (not firm-specific), making trained workers more marketable and thus more likely to quit. The constraint as proposed (training reduces turnover) is not supported by this paper.",
+    "paper_verified": "yes",
+    "modification_note": "Modify the effect_sign from negative to mixed/positive for voluntary quits. The constraint should read: training_hours → turnover_rate (positive for voluntary quits at lag 2; null at lag 1). If the intent is to forbid the reverse (turnover does not cause training), that is valid. But the forward direction is not a simple negative constraint — it may be positive or null depending on training type (general vs. firm-specific) and lag."
+  },
+  {
+    "row_id": "union_membership -> gross_profit_margin",
+    "decision": "yes",
+    "reasoning": "The union_density_productivity_wages_norway paper is verified with IV identification (tax subsidy instrument) and finds that increases in union density lead to substantial increases in firm productivity (value added per worker), which maps to gross_profit_margin; the causal direction is well-identified.",
+    "confidence": "high",
+    "concerns": "The Norway paper (Barth et al.) finds productivity gains, but the companion paper (union_density_productivity_wages_norway second paper) shows the productivity increase is largely driven by price effects rather than quantity productivity gains, and that profitability 'does not fall — if anything, it slightly increases.' The effect is Norway-specific and may not generalize to Anglo-US economies. The productivity effect arises primarily when union density crosses thresholds triggering formal bargaining arrangements.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "union_membership -> injury_frequency_rate",
+    "decision": "modify",
+    "reasoning": "The workplace_safety_bank_intervention paper is verified, but union_membership in that paper is a moderator of the bank intervention → injury reduction effect, not a direct cause of injury reduction; the paper does not estimate a standalone union_membership → injury_frequency_rate causal effect.",
+    "confidence": "high",
+    "concerns": "The quote 'the influence is stronger when banks have a high level of control over firms, and when employees have strong bargaining power' describes a moderation effect, not a direct causal path. The paper uses union membership as a proxy for employee bargaining power that amplifies the bank intervention effect. There is no direct union_membership → injury_frequency_rate regression estimated in this paper.",
+    "paper_verified": "yes",
+    "modification_note": "Modify to reflect the correct causal structure: union_membership moderates (amplifies) the bank_intervention → injury_frequency_rate (negative) effect. If the intent is to constrain union_membership → injury_frequency_rate as a direct negative effect, this paper does not support that; a different source would be needed. Alternatively, approve as a weak indirect constraint with low confidence."
+  },
+  {
+    "row_id": "union_membership -> tobins_q",
+    "decision": "yes",
+    "reasoning": "The unionization_equity_value_us paper is verified and reports that equity value of newly unionized firms drops markedly after 15–18 months using an RDD design around union vote thresholds, with the negative relationship rising with vote share; the direction (unionization → lower Tobin's Q) is causally identified.",
+    "confidence": "medium",
+    "concerns": "The RDD paper (DiNardo & Lee 2004, cited in the paper) finds little impact on output/productivity/wages despite the equity value drop, suggesting the market reaction may reflect investor expectations of rent extraction rather than actual value destruction. The effect is specific to newly unionized US firms and may not generalize to already-unionized firms or other institutional contexts. The Norway evidence (union_density_productivity_wages_norway) shows profitability does not fall, creating cross-paper tension.",
+    "paper_verified": "yes",
+    "modification_note": "N/A"
+  },
+  {
+    "row_id": "union_membership -> total_revenue_eur",
+    "decision": "modify",
+    "reasoning": "The union_density_productivity_wages_norway paper is verified, but the quote describes a union wage premium (unions 'claw back' productivity gains through higher wages), which is a cost effect on the firm, not a revenue effect; the paper does show revenue reallocation to larger unionized firms but this is a market-level reallocation, not a firm-level revenue increase.",
+    "confidence": "high",
+    "concerns": "The wage premium is a labor cost increase, not a total_revenue_eur increase. The companion paper shows that revenue shares are reallocated from small to large unionized firms (a distributional effect), and that price markups increase (which could increase revenue), but the direct mapping of 'union wage premium' to total_revenue_eur is incorrect — the wage premium is an expense, not revenue. The revenue effect (if any) comes through price pass-through and market power, not through the wage premium mechanism cited in the quote.",
+    "paper_verified": "yes",
+    "modification_note": "Modify the cause_raw and mechanism: union_membership → total_revenue_eur (positive) is supportable only through the price markup / market power channel (larger unionized firms gain revenue share), not through the wage premium channel. The constraint should be approved with the caveat that the effect is heterogeneous by firm size (positive for large firms, negative or null for small firms) and is driven by price effects, not productivity gains in quantities."
+  }
+]

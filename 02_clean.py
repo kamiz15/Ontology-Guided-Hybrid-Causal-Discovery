@@ -16,6 +16,7 @@
 # ============================================================
 
 import argparse
+import os
 import re
 import pandas as pd
 import numpy as np
@@ -24,6 +25,7 @@ from config import (
     CLEAN_DATA_PATH,
     READY_DATA_PATH,
     HIGH_CORR_PATH,
+    CLEANING_SUMMARY_PATH,
     EXCLUDE_FROM_CAUSAL,
     MISSING_DROP_THRESHOLD,
     MISSING_FLAG_THRESHOLD,
@@ -32,6 +34,68 @@ from config import (
     NEAR_CONSTANT_STD_RATIO,
 )
 from io_utils import load_tabular_dataset
+
+
+def write_cleaning_summary(
+    output_path: str,
+    input_shape: tuple[int, int],
+    clean_shape: tuple[int, int],
+    final_shape: tuple[int, int],
+    excluded_metadata: list[str],
+    dropped_non_numeric: list[str],
+    near_constant_cols: list[str],
+    corr_path: str,
+    exact_dupes: list[str],
+) -> None:
+    corr_df = pd.read_csv(corr_path) if os.path.exists(corr_path) else pd.DataFrame()
+    high_corr_count = len(corr_df)
+
+    lines = [
+        "# Data Cleaning Summary",
+        "",
+        "## Analysis Orientation",
+        "",
+        "The cleaning step uses horizontal analysis: each row is one confidential bank/entity observation, and each column is an ESG or financial variable. Direct identifiers and administrative fields are excluded from causal discovery, so bank names, legal identifiers, and row IDs are not used as model variables.",
+        "",
+        "## Cleaning Decisions",
+        "",
+        f"- Raw input shape: {input_shape[0]} rows x {input_shape[1]} columns",
+        f"- After dropping fully empty columns: {clean_shape[0]} rows x {clean_shape[1]} columns",
+        f"- Final causal-ready shape: {final_shape[0]} rows x {final_shape[1]} columns",
+        f"- Metadata/admin columns excluded: {len(excluded_metadata)}",
+        f"- Remaining non-numeric columns dropped after encoding: {len(dropped_non_numeric)}",
+        f"- Near-constant numeric columns flagged: {len(near_constant_cols)}",
+        "",
+        "## Correlation Analysis",
+        "",
+        "The correlation check is a redundancy diagnostic, not causal evidence. The cleaner selects numeric variables, computes the Pearson correlation matrix with `pandas.DataFrame.corr()`, converts correlations to absolute values, and reports pairs above the configured threshold. Only exact duplicate pairs with correlation equal to 1.0 are automatically dropped.",
+        "",
+        f"- High-correlation threshold: {HIGH_CORR_THRESHOLD}",
+        f"- High-correlation pairs reported: {high_corr_count}",
+        f"- Exact-duplicate columns dropped: {len(exact_dupes)}",
+    ]
+
+    if excluded_metadata:
+        lines.extend(["", "Excluded metadata/admin columns:", ""])
+        lines.extend(f"- `{col}`" for col in excluded_metadata)
+
+    if dropped_non_numeric:
+        lines.extend(["", "Dropped non-numeric columns after encoding:", ""])
+        lines.extend(f"- `{col}`" for col in dropped_non_numeric)
+
+    if near_constant_cols:
+        lines.extend(["", "Near-constant columns flagged:", ""])
+        lines.extend(f"- `{col}`" for col in near_constant_cols)
+
+    if not corr_df.empty:
+        lines.extend(["", "High-correlation pairs:", ""])
+        for _, row in corr_df.iterrows():
+            lines.append(f"- `{row['col_a']}` vs `{row['col_b']}`: {row['correlation']}")
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    print(f"[clean] Summary -> {output_path}")
 
 
 # ── Step A: Drop fully empty columns ─────────────────────────
@@ -309,16 +373,21 @@ def encode_text_columns(df: pd.DataFrame) -> pd.DataFrame:
 def clean_dataset(input_path: str,
                   clean_path: str,
                   ready_path: str,
-                  corr_path: str) -> pd.DataFrame:
+                  corr_path: str,
+                  summary_path: str = CLEANING_SUMMARY_PATH) -> pd.DataFrame:
 
     df = load_tabular_dataset(input_path)
+    input_shape = df.shape
     print(f"[clean] Input shape: {df.shape}")
 
     df = drop_empty_columns(df)
+    clean_shape = df.shape
     df.to_csv(clean_path, index=False)
     print(f"[clean] After dropping empty cols: {df.shape} -> saved {clean_path}")
 
+    cols_before_metadata = df.columns.tolist()
     df = exclude_metadata(df)
+    excluded_metadata = [c for c in cols_before_metadata if c not in df.columns]
 
     df = coerce_boolean_and_numeric_columns(df)
 
@@ -336,7 +405,7 @@ def clean_dataset(input_path: str,
         print("[clean] WARNING: No numeric columns remain after cleaning. Check your input data.")
         return df
 
-    flag_near_constant(df)
+    near_constant_cols = flag_near_constant(df)
 
     exact_dupes = find_high_correlations(df, corr_path)
     if exact_dupes:
@@ -346,6 +415,17 @@ def clean_dataset(input_path: str,
     df = impute_median(df)
     df.to_csv(ready_path, index=False)
     print(f"[clean] Final causal-ready shape: {df.shape} -> saved {ready_path}")
+    write_cleaning_summary(
+        summary_path,
+        input_shape=input_shape,
+        clean_shape=clean_shape,
+        final_shape=df.shape,
+        excluded_metadata=excluded_metadata,
+        dropped_non_numeric=non_numeric,
+        near_constant_cols=near_constant_cols,
+        corr_path=corr_path,
+        exact_dupes=exact_dupes,
+    )
 
     return df
 
@@ -356,6 +436,7 @@ if __name__ == "__main__":
     parser.add_argument("--clean",  default=CLEAN_DATA_PATH, help="Path for clean output")
     parser.add_argument("--ready",  default=READY_DATA_PATH, help="Path for causal-ready output")
     parser.add_argument("--corr",   default=HIGH_CORR_PATH,  help="Path for correlation report")
+    parser.add_argument("--summary", default=CLEANING_SUMMARY_PATH, help="Path for cleaning summary")
     args = parser.parse_args()
 
-    clean_dataset(args.input, args.clean, args.ready, args.corr)
+    clean_dataset(args.input, args.clean, args.ready, args.corr, args.summary)

@@ -1,0 +1,181 @@
+algorithm,mode,dataset,seed,error,traceback
+pc,unconstrained,synthetic_n2000,45,Data correlation matrix is singular. Cannot run fisherz test. Please check your data.,"Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 216, in __call__
+    inv = np.linalg.inv(sub_corr_matrix)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 609, in inv
+    ainv = _umath_linalg.inv(a, signature=signature)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 104, in _raise_linalgerror_singular
+    raise LinAlgError(""Singular matrix"")
+numpy.linalg.LinAlgError: Singular matrix
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 918, in run_one
+    prediction = run_algorithm(
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 862, in run_algorithm
+    return run_pc(data, columns, mode, dataset_name, adapter)
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 377, in run_pc
+    cg = pc(
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 46, in pc
+    return pc_alg(data=data, node_names=node_names, alpha=alpha, indep_test=indep_test, stable=stable, uc_rule=uc_rule,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 104, in pc_alg
+    cg_1 = SkeletonDiscovery.skeleton_discovery(data, alpha, indep_test, stable,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\PCUtils\SkeletonDiscovery.py"", line 101, in skeleton_discovery
+    p = cg.ci_test(x, y, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\graph\GraphClass.py"", line 58, in ci_test
+    return self.test(i, j, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 218, in __call__
+    raise ValueError('Data correlation matrix is singular. Cannot run fisherz test. Please check your data.')
+ValueError: Data correlation matrix is singular. Cannot run fisherz test. Please check your data.
+"
+pc,constrained,synthetic_n2000,45,Data correlation matrix is singular. Cannot run fisherz test. Please check your data.,"Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 216, in __call__
+    inv = np.linalg.inv(sub_corr_matrix)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 609, in inv
+    ainv = _umath_linalg.inv(a, signature=signature)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 104, in _raise_linalgerror_singular
+    raise LinAlgError(""Singular matrix"")
+numpy.linalg.LinAlgError: Singular matrix
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 918, in run_one
+    prediction = run_algorithm(
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 862, in run_algorithm
+    return run_pc(data, columns, mode, dataset_name, adapter)
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 377, in run_pc
+    cg = pc(
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 46, in pc
+    return pc_alg(data=data, node_names=node_names, alpha=alpha, indep_test=indep_test, stable=stable, uc_rule=uc_rule,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 104, in pc_alg
+    cg_1 = SkeletonDiscovery.skeleton_discovery(data, alpha, indep_test, stable,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\PCUtils\SkeletonDiscovery.py"", line 101, in skeleton_discovery
+    p = cg.ci_test(x, y, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\graph\GraphClass.py"", line 58, in ci_test
+    return self.test(i, j, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 218, in __call__
+    raise ValueError('Data correlation matrix is singular. Cannot run fisherz test. Please check your data.')
+ValueError: Data correlation matrix is singular. Cannot run fisherz test. Please check your data.
+"
+pc,unconstrained,real,42,Data correlation matrix is singular. Cannot run fisherz test. Please check your data.,"Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 216, in __call__
+    inv = np.linalg.inv(sub_corr_matrix)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 609, in inv
+    ainv = _umath_linalg.inv(a, signature=signature)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 104, in _raise_linalgerror_singular
+    raise LinAlgError(""Singular matrix"")
+numpy.linalg.LinAlgError: Singular matrix
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 918, in run_one
+    prediction = run_algorithm(
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 862, in run_algorithm
+    return run_pc(data, columns, mode, dataset_name, adapter)
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 377, in run_pc
+    cg = pc(
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 46, in pc
+    return pc_alg(data=data, node_names=node_names, alpha=alpha, indep_test=indep_test, stable=stable, uc_rule=uc_rule,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 104, in pc_alg
+    cg_1 = SkeletonDiscovery.skeleton_discovery(data, alpha, indep_test, stable,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\PCUtils\SkeletonDiscovery.py"", line 101, in skeleton_discovery
+    p = cg.ci_test(x, y, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\graph\GraphClass.py"", line 58, in ci_test
+    return self.test(i, j, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 218, in __call__
+    raise ValueError('Data correlation matrix is singular. Cannot run fisherz test. Please check your data.')
+ValueError: Data correlation matrix is singular. Cannot run fisherz test. Please check your data.
+"
+pc,unconstrained,real,45,Data correlation matrix is singular. Cannot run fisherz test. Please check your data.,"Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 216, in __call__
+    inv = np.linalg.inv(sub_corr_matrix)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 609, in inv
+    ainv = _umath_linalg.inv(a, signature=signature)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 104, in _raise_linalgerror_singular
+    raise LinAlgError(""Singular matrix"")
+numpy.linalg.LinAlgError: Singular matrix
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 918, in run_one
+    prediction = run_algorithm(
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 862, in run_algorithm
+    return run_pc(data, columns, mode, dataset_name, adapter)
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 377, in run_pc
+    cg = pc(
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 46, in pc
+    return pc_alg(data=data, node_names=node_names, alpha=alpha, indep_test=indep_test, stable=stable, uc_rule=uc_rule,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 104, in pc_alg
+    cg_1 = SkeletonDiscovery.skeleton_discovery(data, alpha, indep_test, stable,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\PCUtils\SkeletonDiscovery.py"", line 101, in skeleton_discovery
+    p = cg.ci_test(x, y, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\graph\GraphClass.py"", line 58, in ci_test
+    return self.test(i, j, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 218, in __call__
+    raise ValueError('Data correlation matrix is singular. Cannot run fisherz test. Please check your data.')
+ValueError: Data correlation matrix is singular. Cannot run fisherz test. Please check your data.
+"
+pc,constrained,real,42,Data correlation matrix is singular. Cannot run fisherz test. Please check your data.,"Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 216, in __call__
+    inv = np.linalg.inv(sub_corr_matrix)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 609, in inv
+    ainv = _umath_linalg.inv(a, signature=signature)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 104, in _raise_linalgerror_singular
+    raise LinAlgError(""Singular matrix"")
+numpy.linalg.LinAlgError: Singular matrix
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 918, in run_one
+    prediction = run_algorithm(
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 862, in run_algorithm
+    return run_pc(data, columns, mode, dataset_name, adapter)
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 377, in run_pc
+    cg = pc(
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 46, in pc
+    return pc_alg(data=data, node_names=node_names, alpha=alpha, indep_test=indep_test, stable=stable, uc_rule=uc_rule,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 104, in pc_alg
+    cg_1 = SkeletonDiscovery.skeleton_discovery(data, alpha, indep_test, stable,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\PCUtils\SkeletonDiscovery.py"", line 101, in skeleton_discovery
+    p = cg.ci_test(x, y, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\graph\GraphClass.py"", line 58, in ci_test
+    return self.test(i, j, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 218, in __call__
+    raise ValueError('Data correlation matrix is singular. Cannot run fisherz test. Please check your data.')
+ValueError: Data correlation matrix is singular. Cannot run fisherz test. Please check your data.
+"
+pc,constrained,real,45,Data correlation matrix is singular. Cannot run fisherz test. Please check your data.,"Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 216, in __call__
+    inv = np.linalg.inv(sub_corr_matrix)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 609, in inv
+    ainv = _umath_linalg.inv(a, signature=signature)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\numpy\linalg\_linalg.py"", line 104, in _raise_linalgerror_singular
+    raise LinAlgError(""Singular matrix"")
+numpy.linalg.LinAlgError: Singular matrix
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 918, in run_one
+    prediction = run_algorithm(
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 862, in run_algorithm
+    return run_pc(data, columns, mode, dataset_name, adapter)
+  File ""C:\Users\User\Desktop\go\run_all.py"", line 377, in run_pc
+    cg = pc(
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 46, in pc
+    return pc_alg(data=data, node_names=node_names, alpha=alpha, indep_test=indep_test, stable=stable, uc_rule=uc_rule,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\search\ConstraintBased\PC.py"", line 104, in pc_alg
+    cg_1 = SkeletonDiscovery.skeleton_discovery(data, alpha, indep_test, stable,
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\PCUtils\SkeletonDiscovery.py"", line 101, in skeleton_discovery
+    p = cg.ci_test(x, y, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\graph\GraphClass.py"", line 58, in ci_test
+    return self.test(i, j, S)
+  File ""C:\Users\User\Desktop\go\.venv\lib\site-packages\causallearn\utils\cit.py"", line 218, in __call__
+    raise ValueError('Data correlation matrix is singular. Cannot run fisherz test. Please check your data.')
+ValueError: Data correlation matrix is singular. Cannot run fisherz test. Please check your data.
+"

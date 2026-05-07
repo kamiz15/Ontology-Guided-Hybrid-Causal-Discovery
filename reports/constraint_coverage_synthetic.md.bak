@@ -1,0 +1,45 @@
+# Constraint Coverage
+
+- Dataset variables: 32
+- Approved required edges: 0
+- Approved forbidden-reverse edges: 6
+- Variables touched: 8 (25.0%)
+- Isolated variables: 24
+
+## Top 10 Most-Constrained Variables
+
+- `overall_esg_score`: 3
+- `turnover_rate`: 2
+- `customer_satisfaction_score`: 2
+- `scope_2_emissions_tco2e`: 1
+- `total_energy_consumption`: 1
+- `asset_growth_pct`: 1
+- `pe_ratio`: 1
+- `tobins_q`: 1
+
+## Isolated Variables
+
+- `emission_reduction_policy_score`
+- `renewable_energy_share`
+- `scope_1_emissions_tco2e`
+- `scope_3_emissions_tco2e`
+- `environmental_fines`
+- `iso_14001_exists`
+- `training_hours`
+- `injury_frequency_rate`
+- `diversity_representation`
+- `community_investment_eur`
+- `board_strategy_esg_oversight_score`
+- `board_diversity`
+- `ceo_chair_split`
+- `auditor_independence_score`
+- `corruption_cases`
+- `total_asset`
+- `total_revenue_eur`
+- `roa_eat`
+- `debt_to_equity_ratio`
+- `green_financing_eur`
+- `roe_eat`
+- `env_pillar_score`
+- `soc_pillar_score`
+- `gov_pillar_score`

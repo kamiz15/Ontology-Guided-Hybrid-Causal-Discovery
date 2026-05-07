@@ -59,6 +59,7 @@ go/
 |   `-- metrics/
 |-- reports/
 |   |-- audit_report.txt
+|   |-- data_cleaning_summary.md
 |   |-- gemma_causal_reasoning.txt
 |   `-- high_correlation_pairs.csv
 `-- scripts/
@@ -128,14 +129,14 @@ powershell -ExecutionPolicy Bypass -File scripts/run_full_pipeline.ps1
 ## Pipeline Steps
 
 - [01_audit.py](./01_audit.py): profiles the raw workbook and writes an audit report
-- [02_clean.py](./02_clean.py): cleans, scores, coerces, and imputes the raw ESG data into modeling-ready numeric outputs
+- [02_clean.py](./02_clean.py): cleans, scores, coerces, and imputes the raw ESG data into modeling-ready numeric outputs, with a horizontal/anonymized cleaning summary
 - [03_build_column_mapping.py](./03_build_column_mapping.py): creates the variable mapping used downstream
 - [04_forbidden_edges.py](./04_forbidden_edges.py): builds ontology-inspired edge constraints
 - [05_run_baselines.py](./05_run_baselines.py): runs PC and LiNGAM baselines
 - [06_run_notears.py](./06_run_notears.py): runs NOTEARS
 - [07_run_deci.py](./07_run_deci.py): runs DECI in constrained and unconstrained modes
 - [08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py): asks Gemma to propose plausible direct ESG causal edges
-- [09_visualize_graphs.py](./09_visualize_graphs.py): produces comparison figures and graph visuals
+- [09_visualize_graphs.py](./09_visualize_graphs.py): produces high-resolution comparison figures, graph visuals, scatter diagnostics, and a data-correlation heatmap
 - [10_gemma_evaluate.py](./10_gemma_evaluate.py): asks Gemma to qualitatively score discovered edges across the graph outputs
 
 ## Data And Processed Outputs
@@ -152,6 +153,16 @@ Main processed artifacts:
 - [data/processed/df_asst_bnk_ecb_processed.xlsx](./data/processed/df_asst_bnk_ecb_processed.xlsx)
 
 The current cleaner keeps a compact causal-ready feature set and converts mixed raw workbook fields into consistently numeric modeling inputs for the downstream graph algorithms.
+
+### Cleaning Orientation
+
+The data cleaning step is described as horizontal analysis: each row is one confidential bank/entity observation, and each column is an ESG or financial variable. Direct identifiers and administrative fields such as bank names, LEI/MFI codes, row IDs, and other metadata are excluded before causal discovery. The modeling dataset therefore uses anonymized row-level observations rather than identifiable bank names as causal variables.
+
+The cleaner also writes [reports/data_cleaning_summary.md](./reports/data_cleaning_summary.md), which records the horizontal-analysis decision, excluded metadata columns, final data shape, and correlation-check method.
+
+### Correlation Check
+
+The correlation analysis is a redundancy diagnostic, not causal evidence. [02_clean.py](./02_clean.py) selects numeric columns, computes the Pearson correlation matrix, takes absolute correlations, and writes variable pairs above `HIGH_CORR_THRESHOLD` to [reports/high_correlation_pairs.csv](./reports/high_correlation_pairs.csv). Only exact duplicate columns with correlation equal to `1.0` are automatically dropped; high but non-perfect pairs are kept and reported for interpretation.
 
 ## Exchange-Rate Helper Workflow
 
@@ -239,6 +250,20 @@ This step is intended as a supplementary plausibility check, not as ground truth
 
 ## Graphs, Figures, And Reports
 
+Regenerate report-quality figures at the default 300 DPI:
+
+```powershell
+.\.venv\Scripts\python.exe 09_visualize_graphs.py
+```
+
+Useful variants:
+
+```powershell
+.\.venv\Scripts\python.exe 09_visualize_graphs.py --dpi 600
+.\.venv\Scripts\python.exe 09_visualize_graphs.py --top-n 25 --subgraphs
+.\.venv\Scripts\python.exe 09_visualize_graphs.py --skip-eda
+```
+
 Current tracked graph artifacts include:
 
 - [outputs/graphs/unconstrained_pc_graph.gml](./outputs/graphs/unconstrained_pc_graph.gml)
@@ -252,6 +277,8 @@ Current tracked graph artifacts include:
 Current tracked figures include:
 
 - [outputs/figures/comparison_grid.png](./outputs/figures/comparison_grid.png)
+- [outputs/figures/correlation_heatmap.png](./outputs/figures/correlation_heatmap.png)
+- [outputs/figures/scatter_key_relationships.png](./outputs/figures/scatter_key_relationships.png)
 - [outputs/figures/jaccard_heatmap.png](./outputs/figures/jaccard_heatmap.png)
 - [outputs/figures/edge_count_comparison.png](./outputs/figures/edge_count_comparison.png)
 - [outputs/figures/constraint_impact.png](./outputs/figures/constraint_impact.png)
@@ -266,6 +293,7 @@ Current tracked figures include:
 Reports and diagnostics:
 
 - [reports/audit_report.txt](./reports/audit_report.txt)
+- [reports/data_cleaning_summary.md](./reports/data_cleaning_summary.md)
 - [reports/high_correlation_pairs.csv](./reports/high_correlation_pairs.csv)
 - [reports/gemma_causal_reasoning.txt](./reports/gemma_causal_reasoning.txt)
 - [outputs/metrics/run_log.csv](./outputs/metrics/run_log.csv)

@@ -17,7 +17,7 @@
 #   python 09_visualize_graphs.py
 #   python 09_visualize_graphs.py --subgraphs
 #   python 09_visualize_graphs.py --min-weight 0.3 --subgraphs
-#   python 09_visualize_graphs.py --top-n 25 --subgraphs --interactive
+#   python 09_visualize_graphs.py --top-n 25 --dpi 300 --subgraphs --interactive
 # ============================================================
 
 from __future__ import annotations
@@ -31,6 +31,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+
+DEFAULT_DPI = 300
+DEFAULT_READY_DATA_PATH = "data/processed/data_ready.csv"
 
 # ── Colors & domain mapping ──────────────────────────────────
 DOMAIN_COLORS = {
@@ -88,6 +91,48 @@ VARIABLE_DOMAINS = {
     "lag_total_asset": "Financial", "lag_market_price": "Financial",
 }
 
+SCATTER_PAIRS = [
+    (
+        "emission_reduction_policy",
+        "board_strategy_esg_oversight",
+        "Highest flagged correlation",
+    ),
+    (
+        "total_revenue",
+        "scope_3_ghg_emissions",
+        "Scale and value-chain emissions",
+    ),
+    (
+        "renewable_energy_share",
+        "scope_2_ghg_emissions",
+        "Energy mix and purchased-energy emissions",
+    ),
+    (
+        "sustainable_finance_green_financing",
+        "reporting_quality",
+        "Green financing and reporting quality",
+    ),
+    (
+        "diversity_women_representation",
+        "board_strategy_esg_oversight",
+        "Diversity and ESG oversight",
+    ),
+    (
+        "community_investment",
+        "total_revenue",
+        "Community investment and firm scale",
+    ),
+]
+
+LOG_TRANSFORM_VARS = {
+    "scope_1_ghg_emissions",
+    "scope_2_ghg_emissions",
+    "scope_3_ghg_emissions",
+    "community_investment",
+    "sustainable_finance_green_financing",
+    "total_revenue",
+}
+
 
 # ── Layout helper ────────────────────────────────────────────
 def _best_layout(G):
@@ -133,6 +178,37 @@ def df_to_nx(adj_df, min_weight=0.0):
             if w != 0 and abs(w) >= min_weight:
                 G.add_edge(s, t, weight=w)
     return G
+
+
+def _save_figure(fig, path, dpi):
+    fig.savefig(path, dpi=dpi, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"  -> {path}")
+
+
+def _pretty_name(name):
+    return name.replace("_", " ").title()
+
+
+def _numeric_frame(df, cols):
+    out = df[list(cols)].apply(pd.to_numeric, errors="coerce")
+    return out.dropna()
+
+
+def _transform_for_scatter(values, var_name):
+    label = _pretty_name(var_name)
+    if var_name in LOG_TRANSFORM_VARS and values.dropna().ge(0).all():
+        return np.log10(values + 1), f"log10({label} + 1)"
+    return values, label
+
+
+def _jitter_if_discrete(values, rng):
+    clean = pd.Series(values).dropna()
+    if clean.empty or clean.nunique() > 8:
+        return values
+    span = clean.max() - clean.min()
+    scale = 0.025 * span if span > 0 else 0.025
+    return values + rng.normal(0, scale, size=len(values))
 
 
 # ── Core plotting ────────────────────────────────────────────
@@ -214,19 +290,111 @@ def plot_graph(G, title, ax, top_n=40):
 
 
 # ── Figure savers ────────────────────────────────────────────
-def save_individual(graphs, out_dir, top_n):
+def save_correlation_heatmap(data_path, out_dir, dpi):
+    if not os.path.exists(data_path):
+        print(f"  Data file not found, skipping correlation heatmap: {data_path}")
+        return
+
+    df = pd.read_csv(data_path)
+    numeric = df.select_dtypes(include="number")
+    if numeric.shape[1] < 2:
+        print("  Not enough numeric columns for correlation heatmap")
+        return
+
+    corr = numeric.corr()
+    names = [_pretty_name(c) for c in corr.columns]
+    size = max(8, 0.75 * len(names))
+    fig, ax = plt.subplots(figsize=(size, size))
+    im = ax.imshow(corr.values, cmap="coolwarm", vmin=-1, vmax=1)
+    ax.set_xticks(range(len(names)))
+    ax.set_yticks(range(len(names)))
+    ax.set_xticklabels(names, rotation=45, ha="right", fontsize=8)
+    ax.set_yticklabels(names, fontsize=8)
+
+    for i in range(len(names)):
+        for j in range(len(names)):
+            val = corr.iloc[i, j]
+            color = "white" if abs(val) > 0.65 else "black"
+            ax.text(j, i, f"{val:.2f}", ha="center", va="center",
+                    fontsize=7, color=color)
+
+    fig.colorbar(im, ax=ax, label="Pearson correlation")
+    ax.set_title("Numeric Variable Correlation Matrix", fontsize=12, fontweight="bold")
+    fig.tight_layout()
+    _save_figure(fig, os.path.join(out_dir, "correlation_heatmap.png"), dpi)
+
+
+def save_scatter_diagnostics(data_path, out_dir, dpi):
+    if not os.path.exists(data_path):
+        print(f"  Data file not found, skipping scatter diagnostics: {data_path}")
+        return
+
+    df = pd.read_csv(data_path)
+    pairs = [(x, y, title) for x, y, title in SCATTER_PAIRS
+             if x in df.columns and y in df.columns]
+    if not pairs:
+        print("  No configured scatter pairs found in data")
+        return
+
+    cols = 2
+    rows = (len(pairs) + cols - 1) // cols
+    fig, axes = plt.subplots(rows, cols, figsize=(7 * cols, 5.2 * rows))
+    axes = np.array(axes).flatten()
+    rng = np.random.default_rng(42)
+
+    for ax, (x_col, y_col, title) in zip(axes, pairs):
+        data = _numeric_frame(df, [x_col, y_col])
+        if data.empty:
+            ax.text(0.5, 0.5, "No numeric data", ha="center", va="center",
+                    transform=ax.transAxes, color="#777")
+            ax.axis("off")
+            continue
+
+        x_vals, x_label = _transform_for_scatter(data[x_col], x_col)
+        y_vals, y_label = _transform_for_scatter(data[y_col], y_col)
+        x_plot = _jitter_if_discrete(x_vals.to_numpy(), rng)
+        y_plot = _jitter_if_discrete(y_vals.to_numpy(), rng)
+        color = DOMAIN_COLORS.get(VARIABLE_DOMAINS.get(y_col, "Unknown"), "#378ADD")
+
+        ax.scatter(x_plot, y_plot, s=34, color=color, alpha=0.72,
+                   edgecolors="#333", linewidths=0.35)
+
+        if len(data) > 2 and x_vals.nunique() > 1 and y_vals.nunique() > 1:
+            coef = np.polyfit(x_vals, y_vals, deg=1)
+            x_line = np.linspace(x_vals.min(), x_vals.max(), 100)
+            y_line = coef[0] * x_line + coef[1]
+            ax.plot(x_line, y_line, color="#222", linewidth=1.2, alpha=0.75)
+            corr = data[x_col].corr(data[y_col])
+            subtitle = f"Pearson r = {corr:.2f}, n = {len(data)}"
+        else:
+            subtitle = f"n = {len(data)}"
+
+        ax.set_title(f"{title}\n{subtitle}", fontsize=10, fontweight="bold")
+        ax.set_xlabel(x_label, fontsize=9)
+        ax.set_ylabel(y_label, fontsize=9)
+        ax.grid(True, color="#d0d0d0", linewidth=0.6, alpha=0.65)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+    for ax in axes[len(pairs):]:
+        ax.axis("off")
+
+    fig.suptitle("Key Scatter Diagnostics", fontsize=14, fontweight="bold", y=1.01)
+    fig.tight_layout()
+    _save_figure(fig, os.path.join(out_dir, "scatter_key_relationships.png"), dpi)
+
+
+def save_individual(graphs, out_dir, top_n, dpi):
     for name, df in graphs.items():
         fig, ax = plt.subplots(1, 1, figsize=(12, 9))
         plot_graph(df_to_nx(df), name.replace("_", " ").title(), ax, top_n)
         legend = [mpatches.Patch(color=c, label=d) for d, c in DOMAIN_COLORS.items()]
         ax.legend(handles=legend, loc="lower left", fontsize=8)
         p = os.path.join(out_dir, f"network_{name}.png")
-        fig.savefig(p, dpi=150, bbox_inches="tight", facecolor="white")
-        plt.close(fig)
-        print(f"  -> {p}")
+        _save_figure(fig, p, dpi)
 
 
-def save_grid(graphs, out_dir, top_n):
+def save_grid(graphs, out_dir, top_n, dpi):
     n = len(graphs)
     if n == 0:
         return
@@ -244,12 +412,10 @@ def save_grid(graphs, out_dir, top_n):
     fig.suptitle("Causal Graph Comparison", fontsize=14, fontweight="bold", y=1.01)
     fig.tight_layout()
     p = os.path.join(out_dir, "comparison_grid.png")
-    fig.savefig(p, dpi=150, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"  -> {p}")
+    _save_figure(fig, p, dpi)
 
 
-def save_jaccard(graphs, out_dir):
+def save_jaccard(graphs, out_dir, dpi):
     names = list(graphs.keys())
     n = len(names)
     if n < 2:
@@ -282,12 +448,10 @@ def save_jaccard(graphs, out_dir):
     ax.set_title("Pairwise Edge Overlap", fontsize=12, fontweight="bold")
     fig.tight_layout()
     p = os.path.join(out_dir, "jaccard_heatmap.png")
-    fig.savefig(p, dpi=150, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"  -> {p}")
+    _save_figure(fig, p, dpi)
 
 
-def save_edge_bars(graphs, out_dir):
+def save_edge_bars(graphs, out_dir, dpi):
     names, counts, colors = [], [], []
     for name, df in graphs.items():
         names.append(name.replace("_", "\n").title()[:22])
@@ -315,12 +479,10 @@ def save_edge_bars(graphs, out_dir):
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
     p = os.path.join(out_dir, "edge_count_comparison.png")
-    fig.savefig(p, dpi=150, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"  -> {p}")
+    _save_figure(fig, p, dpi)
 
 
-def save_constraint_impact(graphs, out_dir):
+def save_constraint_impact(graphs, out_dir, dpi):
     pairs = [("unconstrained_pc", "constrained_pc", "PC"),
              ("deci_unconstrained", "deci_constrained", "DECI")]
     found = [(u, c, l) for u, c, l in pairs if u in graphs and c in graphs]
@@ -347,9 +509,7 @@ def save_constraint_impact(graphs, out_dir):
         ax.spines["right"].set_visible(False)
     fig.tight_layout()
     p = os.path.join(out_dir, "constraint_impact.png")
-    fig.savefig(p, dpi=150, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"  -> {p}")
+    _save_figure(fig, p, dpi)
 
 
 def save_interactive(graphs, out_dir):
@@ -391,7 +551,7 @@ def _filter_by_edge_domain(G, keep_fn):
     return H
 
 
-def save_domain_subgraphs(graphs, out_dir, top_n=30):
+def save_domain_subgraphs(graphs, out_dir, top_n=30, dpi=DEFAULT_DPI):
     """For each graph, produce a 2x3 panel with domain-filtered views:
     E-only, S-only, G-only, F-only, cross-domain, and top-K strongest."""
     for name, df in graphs.items():
@@ -433,9 +593,7 @@ def save_domain_subgraphs(graphs, out_dir, top_n=30):
         fig.tight_layout()
 
         p = os.path.join(out_dir, f"subgraphs_{name}.png")
-        fig.savefig(p, dpi=150, bbox_inches="tight", facecolor="white")
-        plt.close(fig)
-        print(f"  -> {p}")
+        _save_figure(fig, p, dpi)
 
 
 # ── CLI ──────────────────────────────────────────────────────
@@ -443,10 +601,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--graph-dir", default="outputs/graphs")
     parser.add_argument("--out-dir",   default="outputs/figures")
+    parser.add_argument("--data-path", default=DEFAULT_READY_DATA_PATH,
+                        help="Causal-ready numeric CSV used for EDA plots")
+    parser.add_argument("--dpi", type=int, default=DEFAULT_DPI,
+                        help="Output image resolution")
     parser.add_argument("--top-n", type=int, default=40,
                         help="Keep only this many strongest edges per figure (0 = all)")
     parser.add_argument("--min-weight", type=float, default=0.0,
                         help="Drop edges with |weight| below this threshold")
+    parser.add_argument("--skip-eda", action="store_true",
+                        help="Skip scatter and data-correlation diagnostic figures")
     parser.add_argument("--subgraphs", action="store_true",
                         help="Produce domain-split subgraph panels")
     parser.add_argument("--interactive", action="store_true",
@@ -470,15 +634,18 @@ def main():
             graphs[nm] = m
             print(f"  {nm}: {int((m.values != 0).sum())} edges after threshold")
 
-    print(f"\n  1. Individual plots"); save_individual(graphs, args.out_dir, args.top_n)
-    print(f"\n  2. Comparison grid");   save_grid(graphs, args.out_dir, args.top_n)
-    print(f"\n  3. Jaccard heatmap");   save_jaccard(graphs, args.out_dir)
-    print(f"\n  4. Edge counts");       save_edge_bars(graphs, args.out_dir)
-    print(f"\n  5. Constraint impact"); save_constraint_impact(graphs, args.out_dir)
+    print(f"\n  1. Individual plots"); save_individual(graphs, args.out_dir, args.top_n, args.dpi)
+    print(f"\n  2. Comparison grid");   save_grid(graphs, args.out_dir, args.top_n, args.dpi)
+    print(f"\n  3. Jaccard heatmap");   save_jaccard(graphs, args.out_dir, args.dpi)
+    print(f"\n  4. Edge counts");       save_edge_bars(graphs, args.out_dir, args.dpi)
+    print(f"\n  5. Constraint impact"); save_constraint_impact(graphs, args.out_dir, args.dpi)
+    if not args.skip_eda:
+        print(f"\n  6. Data correlation heatmap"); save_correlation_heatmap(args.data_path, args.out_dir, args.dpi)
+        print(f"\n  7. Scatter diagnostics");      save_scatter_diagnostics(args.data_path, args.out_dir, args.dpi)
     if args.subgraphs:
-        print(f"\n  6. Domain subgraphs"); save_domain_subgraphs(graphs, args.out_dir, args.top_n)
+        print(f"\n  8. Domain subgraphs"); save_domain_subgraphs(graphs, args.out_dir, args.top_n, args.dpi)
     if args.interactive:
-        print(f"\n  7. Interactive HTML"); save_interactive(graphs, args.out_dir)
+        print(f"\n  9. Interactive HTML"); save_interactive(graphs, args.out_dir)
 
     print(f"\n[done] All figures in {args.out_dir}/")
 

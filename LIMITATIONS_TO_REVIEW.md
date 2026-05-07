@@ -157,3 +157,161 @@ returns. Remaining edge cases are best handled at analysis time
 (sensitivity analysis: re-run with these rows excluded) rather than at
 parse time. Synthetic-data experiments are the headline thesis result;
 real-data is the case study chapter.
+
+---
+
+## 4. Synthetic DAG diagnostics use marginal correlations
+
+**Date introduced:** 2026-05-04
+**Status:** Needs improvement before final synthetic-results reporting
+**Affected files:** 12_generate_synthetic.py,
+                    13_check_synthetic_correlations.py,
+                    14_check_synthetic_ranges.py,
+                    reports/synthetic_generation_summary.md
+
+**What was done:** A quick standalone diagnostic checks whether selected
+synthetic variable pairs have the expected positive, negative, or near-zero
+marginal Pearson correlations.
+
+**Additional range check:** 14_check_synthetic_ranges.py checks the three
+synthetic variables that previously had unrealistic maxima after exponenting
+linear combinations. On 2026-05-04, the N=2000 synthetic file passed:
+tobins_q max 7.39 below threshold 8, debt_to_equity_ratio max 20.09 below
+threshold 25, and corruption_cases max 31 below threshold 50.
+
+**Why this is a shortcut:** Marginal correlations do not distinguish direct
+edges from indirect paths or common-cause structure. A non-edge pair can look
+correlated even when the DAG is correct; for example,
+renewable_energy_share and corruption_cases share upstream governance/policy
+structure, so their marginal correlation is expected to be non-zero.
+
+**Rigorous alternative:** Replace the quick diagnostic with partial
+correlations or d-separation-aware checks using the known DAG. Non-edge
+pairs should be tested conditional on the appropriate separating set rather
+than judged only by marginal Pearson correlation.
+
+**Action before submission:**
+- [ ] Replace marginal non-edge checks with partial-correlation checks
+- [ ] Use d-separation from the known synthetic DAG to choose test pairs
+- [ ] Document that indirect paths can create marginal association without
+      direct causal edges
+- [ ] Revisit fixed range thresholds after comparing synthetic distributions
+      against the final real-data sample
+
+---
+
+## 5. Constraint adapter sanity check has empty inputs
+
+**Date introduced:** 2026-05-04
+**Status:** Waiting on finalized constraint CSVs and a pinned Causica runtime
+**Affected files:** 14_constraint_adapter.py,
+                    data/processed/forbidden_edges_draft.csv,
+                    data/processed/required_edges_draft.csv,
+                    data/processed/causica_constraint_matrix.npy
+
+**What happened:** Running `python 14_constraint_adapter.py` completed without
+crashing, but it loaded 0 forbidden and 0 required constraints because
+data/processed/forbidden_edges_draft.csv and
+data/processed/required_edges_draft.csv do not exist yet. causal-learn and
+gCastle formats were therefore tested only as empty 25x25 structures. Global
+Python does not have `causica` installed, but `.venv` does have Causica 0.4.5.
+Using `.venv`, the adapter now writes the real Causica constraint matrix to
+data/processed/causica_constraint_matrix.npy.
+
+**Real Causica API path found:** Causica 0.4.5 uses
+`causica.lightning.modules.deci_module.DECIModule`. Hard graph constraints
+are passed via the `constraint_matrix_path` argument, and `DECIModule` only
+loads `.npy` constraint matrices. The actual Causica convention is:
+`1 = required edge`, `0 = forbidden edge`, and `NaN = unconstrained`. This is
+different from the local fallback/gCastle convention of `1`, `-1`, and `0`.
+
+**Why this matters:** The adapter code path works, but this is not a real
+constraint-injection validation yet. It only proves that empty inputs are
+handled gracefully and that missing Causica raises a clear message instead of
+silently returning an invalid matrix. The full real `DECIModule` import is
+still blocked by dependency pinning: Causica 0.4.5 requires `torch==2.0.0`,
+`tensordict<0.2.0`, `numpy<2.0`, `pandas<2.0`, and `jsonargparse<4.21.0`.
+The current `.venv` has newer versions, producing an MRO error inside
+Causica's noise distributions.
+
+**Fix before full experiments:** Generate or finalize the draft constraint
+CSVs, then rerun `python 14_constraint_adapter.py` and confirm non-zero
+forbidden/required counts. For the actual Causica DECI path, use a separate
+pinned environment rather than downgrading the main project `.venv`.
+
+**Action before submission:**
+- [ ] Produce data/processed/forbidden_edges_draft.csv
+- [ ] Produce data/processed/required_edges_draft.csv
+- [ ] Rerun 14_constraint_adapter.py and record non-zero constraint counts
+- [ ] Create a separate `.venv_causica` with Causica 0.4.5's exact dependency
+      pins if the real DECIModule path is used
+- [ ] Pass data/processed/causica_constraint_matrix.npy to DECIModule through
+      `constraint_matrix_path`
+
+---
+
+## 6. Pillar score smoke test
+
+**Date introduced:** 2026-05-04
+**Affected files:** 02d_check_pillar_scores.py,
+                    02d_describe_pillar_scores.py,
+                    data/processed/data_ready.csv,
+                    data/synthetic/synthetic_n110.csv,
+                    data/synthetic/synthetic_n500.csv,
+                    data/synthetic/synthetic_n2000.csv
+
+**What was done:** Added a small standalone smoke test that checks whether
+the real and synthetic datasets contain env_pillar_score, soc_pillar_score,
+gov_pillar_score, and overall_esg_score. Added a second quick script that
+prints descriptive statistics for the pillar scores in synthetic_n2000.csv.
+
+**Why this is a shortcut:** The script only verifies column presence and
+dataset shape. It does not validate the pillar-score formula, normalization,
+or whether the scores match the final thesis methodology.
+
+**Rigorous alternative:** Add formal tests for the pillar-score computation:
+known input rows, expected z-scores, expected min-max scaling, and expected
+overall ESG score.
+
+**Action before submission:**
+- [ ] Run 02d_check_pillar_scores.py after every pillar-score rebuild
+- [ ] Run 02d_describe_pillar_scores.py to inspect pillar-score ranges
+- [ ] Add formula-level tests once 02d_compute_pillar_scores.py is finalized
+
+---
+
+## 7. Paper inventory cleanup and folder organization helper
+
+**Date introduced:** 2026-05-06
+**Affected files:** paper_inverntory.md,
+                    organize_papers.py,
+                    C:/Users/User/Desktop/Outline and Materials needed/
+
+**What was done:** The paper inventory was synced against the source PDF
+folder while treating duplicate download copies such as `(1)` and `(2)` as
+the same paper. Rows whose abstract contained `remove` were removed from the
+inventory, and the remaining IDs were renumbered sequentially. The current
+inventory has 147 rows. A helper script, `organize_papers.py`, was added to
+copy papers into classification folders by E, S, G, X, SKIP, or UNCLASSIFIED.
+
+**Why this is a shortcut:** Several classifications for newly added papers
+come from the manual grouping notes in the prompt rather than from a fully
+audited metadata source. The organizer script uses those mappings as
+supplemental classifications when the inventory cell is blank, but it does
+not modify the inventory itself.
+
+**Rigorous alternative:** Fill the `classification` column directly in
+`paper_inverntory.md` for every retained paper, then run the organizer using
+only inventory classifications. Review duplicate-copy groups manually before
+final archive cleanup.
+
+**Safety note:** `organize_papers.py` defaults to copy mode and does not
+delete source PDFs. Run `python organize_papers.py --dry-run` first, then run
+`python organize_papers.py` only after reviewing the planned folder routing.
+
+**Action before submission:**
+- [ ] Fill any remaining blank classifications in `paper_inverntory.md`
+- [ ] Run `python organize_papers.py --dry-run` and inspect unmatched files
+- [ ] Run `python organize_papers.py` only after the dry run looks correct
+- [ ] Review `organization_manifest.csv` after copying
+- [ ] Manually inspect each `group_*` folder before deleting or moving loose PDFs

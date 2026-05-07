@@ -24,6 +24,10 @@ import numpy as np
 import pandas as pd
 from config import READY_DATA_PATH
 
+DEFAULT_GOOGLE_MODEL = "gemma-3-27b-it"
+DEFAULT_GOOGLE_TIMEOUT = 300
+DEFAULT_GOOGLE_MAX_OUTPUT_TOKENS = 4096
+
 # ── ESG variable descriptions for LLM prompting ─────────────
 VARIABLE_DESCRIPTIONS = {
     "co2_ch4_n2o_scope_1_3":       "Total GHG emissions Scope 1-3 (tCO2e)",
@@ -108,16 +112,34 @@ def query_ollama(prompt: str, model: str = "gemma4:12b") -> str:
     with urllib.request.urlopen(req, timeout=300) as resp:
         return json.loads(resp.read())["response"]
 
-def query_google_ai(prompt: str, api_key: str, model: str = "gemma-4-12b-it") -> str:
+def resolve_google_api_key(api_key: str | None = None) -> str:
+    key = api_key or os.environ.get("GOOGLE_AI_KEY", "")
+    if not key:
+        raise ValueError("Need --api-key or GOOGLE_AI_KEY env")
+    return key
+
+def query_google_ai(
+    prompt: str,
+    api_key: str,
+    model: str = DEFAULT_GOOGLE_MODEL,
+    temperature: float = 0.2,
+    timeout: int = DEFAULT_GOOGLE_TIMEOUT,
+    max_output_tokens: int = DEFAULT_GOOGLE_MAX_OUTPUT_TOKENS,
+) -> str:
+    import urllib.error
     import urllib.request
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4096}
+        "generationConfig": {"temperature": temperature, "maxOutputTokens": max_output_tokens}
     }).encode()
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=300) as resp:
-        result = json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            result = json.loads(resp.read())
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Google AI Studio HTTP {exc.code}: {body}") from exc
     return result["candidates"][0]["content"]["parts"][0]["text"]
 
 def query_huggingface(prompt: str, model_id: str = "google/gemma-4-12b-it") -> str:
@@ -204,9 +226,12 @@ def main():
         m = args.model or "gemma4:12b"
         qfn = lambda p: query_ollama(p, m)
     elif args.backend == "google":
-        key = args.api_key or os.environ.get("GOOGLE_AI_KEY","")
-        if not key: print("[error] Need --api-key or GOOGLE_AI_KEY env"); return
-        m = args.model or "gemma-4-12b-it"
+        try:
+            key = resolve_google_api_key(args.api_key)
+        except ValueError as e:
+            print(f"[error] {e}")
+            return
+        m = args.model or DEFAULT_GOOGLE_MODEL
         qfn = lambda p: query_google_ai(p, key, m)
     else:
         m = args.model or "google/gemma-4-12b-it"
