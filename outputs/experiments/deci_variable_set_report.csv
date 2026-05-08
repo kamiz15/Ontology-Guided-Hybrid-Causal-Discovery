@@ -1,0 +1,35 @@
+variable,included_full,included_reduced,reason,missing_rate,variance,max_abs_correlation_with_other_variable,ontology_role,domain,is_composite,is_component
+asset_growth_pct,True,True,included: referenced by ontology constraint,0.0,0.04661869811524963,0.8633030039420566,financial_outcome_or_control,financial,False,False
+auditor_independence_score,True,True,included: referenced by ontology constraint,0.0,634.2173510625277,0.8204897522259731,ontology_component,G,False,True
+board_diversity,True,True,included: referenced by ontology constraint,0.0,0.04139840706684505,0.5943010209996898,ontology_component,G,False,True
+board_strategy_esg_oversight_score,True,True,included: referenced by ontology constraint,0.0,0.08048373644703923,0.9999999999999998,ontology_component,G,False,True
+ceo_chair_split,True,True,included: referenced by ontology constraint,0.0,0.24372186093046525,0.638240563329697,ontology_component,G,False,True
+community_investment_eur,True,True,included: ontology-connected or financial variable,0.0,9.134222329039566e+20,0.5658705367467658,ontology_component,S,False,True
+corruption_cases,True,True,included: referenced by ontology constraint,0.0,32.53386068034017,0.6246305467707136,ontology_component,G,False,True
+customer_satisfaction_score,True,True,included: referenced by ontology constraint,0.0,263.02714590815896,0.663829668916398,ontology_component,S,False,True
+debt_to_equity_ratio,True,True,included: referenced by ontology constraint,0.0,16.716383666334963,0.4722687056942321,financial_outcome_or_control,financial,False,False
+diversity_representation,True,True,included: referenced by ontology constraint,0.0,0.014250526623019184,0.5653252280043765,ontology_component,S,False,True
+emission_reduction_policy_score,True,True,included: referenced by ontology constraint,0.0,0.08048373644703921,0.5440414507772022,ontology_component,E,False,True
+env_pillar_score,True,False,excluded: composite ESG score; components retained,0.0,95.62562274098023,0.6972340859297683,composite_esg,E,True,False
+environmental_fines,True,True,included: referenced by ontology constraint,0.0,1306.4795978912593,0.5275117780372751,ontology_component,E,False,True
+gov_pillar_score,True,False,excluded: composite ESG score; components retained,0.0,201.20934111759803,0.9999999999999998,composite_esg,G,True,False
+green_financing_eur,True,True,included: ontology-connected or financial variable,0.0,1.0282391036144902e+23,0.14261080513496932,ontology_component,E,False,True
+health_safety_score,True,True,included: ontology-connected or financial variable,0.0,0.45704753961634687,0.48243085631614074,ontology_component,S,False,True
+injury_frequency_rate,True,True,included: ontology-connected or financial variable,0.0,2.8419578175262257,0.6693062031928967,ontology_component,S,False,True
+iso_14001_exists,True,True,included: referenced by ontology constraint,0.0,0.2501188094047024,0.5463798590612164,ontology_component,E,False,True
+overall_esg_score,True,True,included: referenced by ontology constraint,0.0,74.38266727717595,0.6813148604768184,composite_esg,other,True,False
+pe_ratio,True,True,included: referenced by ontology constraint,0.0,526.2553915648236,0.8426498937758375,financial_outcome_or_control,financial,False,False
+renewable_energy_share,True,True,included: ontology-connected or financial variable,0.0,0.07022463364804005,0.27008346428480706,ontology_component,E,False,True
+reporting_quality_score,True,True,included: ontology-connected or financial variable,0.0,0.5574645537948291,0.4454245760142394,ontology_component,E,False,True
+roa_eat,True,True,included: referenced by ontology constraint,0.0,0.006100587247006433,0.8633030039420566,financial_outcome_or_control,financial,False,False
+roe_eat,True,True,included: referenced by ontology constraint,0.0,0.02255539856033343,0.6133125652369529,financial_outcome_or_control,financial,False,False
+scope_1_emissions_tco2e,True,True,included: referenced by ontology constraint,0.0,232757533935.68466,0.8660115813545968,ontology_component,E,False,True
+scope_2_emissions_tco2e,True,True,included: referenced by ontology constraint,0.0,30900277406.561367,0.8660115813545968,ontology_component,E,False,True
+scope_3_emissions_tco2e,True,True,included: ontology-connected or financial variable,0.0,1.809882752815892e+19,0.3278844331456217,ontology_component,E,False,True
+soc_pillar_score,True,False,excluded: composite ESG score; components retained,0.0,238.1667978213688,0.6813148604768184,composite_esg,S,True,False
+tobins_q,True,True,included: referenced by ontology constraint,0.0,10.617130957708563,0.8426498937758375,financial_outcome_or_control,financial,False,False
+total_asset,True,True,included: ontology-connected or financial variable,0.0,1.1598976352874828e+19,0.6791260988609901,financial_outcome_or_control,financial,False,False
+total_energy_consumption,True,True,included: referenced by ontology constraint,0.0,34469430559173.09,0.567605138053173,ontology_component,E,False,True
+total_revenue_eur,True,True,included: referenced by ontology constraint,0.0,2.712242001973311e+24,0.0984626530903506,financial_outcome_or_control,financial,False,False
+training_hours,True,True,included: referenced by ontology constraint,0.0,11971.815211298917,0.5042342208163276,ontology_component,S,False,True
+turnover_rate,True,True,included: referenced by ontology constraint,0.0,0.009836130178076117,0.6693062031928967,ontology_component,S,False,True

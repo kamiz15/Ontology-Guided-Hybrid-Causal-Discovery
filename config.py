@@ -74,6 +74,20 @@ DECI_BACKEND = "causica"  # causica | manual
 DECI_ALLOW_MANUAL_FALLBACK = True
 DECI_PRESET = "small_data"  # default | small_data | fast_debug
 MIN_SAMPLES_PER_VARIABLE_WARNING = 10
+DECI_TIMEOUT_SECONDS = 1800
+DECI_SKIP_AFTER_TIMEOUT = False
+
+DECI_ABLATION_ENABLED = True
+# Temporary Windows/local review grid, requested 2026-05-08.
+# This intentionally narrows the full DECI ablation while the native Causica
+# path is being reviewed. Restore the broader thesis grid before final runs.
+DECI_ABLATION_GRID = {
+    "epochs": [20, 50],
+    "thresholds": [0.25, 0.30, 0.35],
+    "sparsity_strength": ["current"],
+    "variable_sets": ["reduced"],
+    "constraint_modes": ["unconstrained", "native_constrained"],
+}
 
 DECI_THRESHOLD_CANDIDATES = [
     0.001, 0.005, 0.01, 0.02, 0.03,

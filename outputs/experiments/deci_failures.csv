@@ -1,0 +1,1 @@
+config_id,dataset,variable_set,mode,constraint_mode,seed,epochs,backend,status,exception_type,error_message,full_error_message,traceback_short,failure_phase,runtime_seconds

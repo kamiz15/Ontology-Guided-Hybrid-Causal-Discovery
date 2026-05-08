@@ -45,11 +45,11 @@ DECI_DIAGNOSTICS_PATH = RESULTS_DIR / "deci_diagnostics.csv"
 DECI_THRESHOLD_SWEEP_PATH = RESULTS_DIR / "deci_threshold_sweep.csv"
 DECI_STABLE_EDGES_PATH = RESULTS_DIR / "deci_stable_edges.csv"
 DECI_WORK_DIR = RESULTS_DIR / "deci_work"
-DECI_TIMEOUT_SECONDS = 300
-DECI_GLOBAL_ABORT_SECONDS = 1800
+DECI_TIMEOUT_SECONDS = int(getattr(project_config, "DECI_TIMEOUT_SECONDS", 300))
+DECI_GLOBAL_ABORT_SECONDS = int(getattr(project_config, "DECI_TIMEOUT_SECONDS", 1800))
 NOTEARS_NOTE_PRINTED = False
 CURRENT_DECI_THRESHOLD = float(getattr(project_config, "DECI_THRESHOLD", 0.275))
-DECI_RUN_CACHE: dict[tuple[str, str, int], dict[str, Any]] = {}
+DECI_RUN_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
 
 DATASETS = {
     "synthetic_n2000": {
@@ -883,16 +883,25 @@ def deci_subprocess_entry(input_path: str, output_path: str) -> int:
     int
         Process exit code.
     """
+    phase = "data_preparation"
     try:
         payload = np.load(input_path, allow_pickle=True)
         data = np.asarray(payload["data"], dtype=float)
         columns = [str(item) for item in payload["columns"].tolist()]
+        if not np.isfinite(data).all():
+            raise ValueError("DECI input data contains NaN or infinite values")
+        phase = "constraint_matrix_loading"
         has_constraint = bool(payload["has_constraint"][0])
         constraint_matrix = (
             np.asarray(payload["constraint_matrix"], dtype=np.float32)
             if has_constraint
             else None
         )
+        if constraint_matrix is not None and constraint_matrix.shape != (len(columns), len(columns)):
+            raise ValueError(
+                "DECI constraint matrix shape "
+                f"{constraint_matrix.shape} does not match {len(columns)} variables"
+            )
         run_name = str(payload["run_name"].item())
         adjacency_path = Path(str(payload["adjacency_path"].item()))
         log_path = str(payload["log_path"].item())
@@ -911,8 +920,10 @@ def deci_subprocess_entry(input_path: str, output_path: str) -> int:
         (ROOT / "outputs" / "graphs").mkdir(parents=True, exist_ok=True)
         Path(log_path).parent.mkdir(parents=True, exist_ok=True)
 
+        phase = "causica_model_initialization"
         deci_module = load_module_from_path("step_07_run_deci", ROOT / "07_run_deci.py")
         batch_size = max(8, min(batch_size_cap, data.shape[0] // 2))
+        phase = "training"
         adj = deci_module.run_deci(
             data=data,
             columns=columns,
@@ -930,6 +941,7 @@ def deci_subprocess_entry(input_path: str, output_path: str) -> int:
             backend=backend,
             allow_manual_fallback=allow_manual_fallback,
         )
+        phase = "adjacency_extraction"
         np.save(adjacency_path, np.asarray(adj, dtype=int))
         result = {
             "status": "success",
@@ -937,9 +949,12 @@ def deci_subprocess_entry(input_path: str, output_path: str) -> int:
             "backend_metadata": getattr(deci_module.run_deci, "last_metadata", {}),
         }
     except BaseException as exc:
+        message = str(exc).strip() or repr(exc)
         result = {
             "status": "failed",
-            "error": str(exc),
+            "error": message,
+            "exception_type": type(exc).__name__,
+            "phase": phase,
             "traceback": traceback.format_exc(),
         }
 
@@ -954,6 +969,7 @@ def run_deci_guarded(
     dataset_name: str,
     seed: int,
     adapter: Any,
+    deci_options: dict[str, Any] | None = None,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """
     Run the existing DECI helper in a timed subprocess.
@@ -978,11 +994,22 @@ def run_deci_guarded(
     tuple[np.ndarray, dict[str, Any]]
         Directed binary adjacency and diagnostic metadata.
     """
-    cache_key = (dataset_name, mode, seed)
+    option_key = ""
+    if deci_options:
+        option_key = json.dumps(deci_options, sort_keys=True, default=str)
+    cache_key = (dataset_name, mode, seed, option_key)
     if cache_key in DECI_RUN_CACHE:
         training = DECI_RUN_CACHE[cache_key]
     else:
-        training = train_deci_guarded(data, columns, mode, dataset_name, seed, adapter)
+        training = train_deci_guarded(
+            data,
+            columns,
+            mode,
+            dataset_name,
+            seed,
+            adapter,
+            deci_options=deci_options,
+        )
         DECI_RUN_CACHE[cache_key] = training
 
     forbidden, required = load_constraints(dataset_name, adapter)
@@ -1043,6 +1070,7 @@ def train_deci_guarded(
     dataset_name: str,
     seed: int,
     adapter: Any,
+    deci_options: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Train DECI in a Windows-safe subprocess and return raw weights.
@@ -1068,15 +1096,36 @@ def train_deci_guarded(
         Raw DECI artifacts and run metadata.
     """
     preset = get_deci_preset()
+    deci_options = dict(deci_options or {})
+    for key in [
+        "max_epochs",
+        "learning_rate",
+        "batch_size_cap",
+        "hidden_dim",
+        "l1_lambda",
+        "device",
+        "timeout_seconds",
+    ]:
+        if key in deci_options and deci_options[key] is not None:
+            preset[key] = deci_options[key]
+    if deci_options.get("preset_name"):
+        preset["name"] = deci_options["preset_name"]
     constraint_matrix = None
     if mode == "constrained":
-        forbidden, required = load_constraints(dataset_name, adapter)
+        if "forbidden_override" in deci_options or "required_override" in deci_options:
+            forbidden = list(deci_options.get("forbidden_override", []))
+            required = list(deci_options.get("required_override", []))
+        else:
+            forbidden, required = load_constraints(dataset_name, adapter)
         # Build the real adapter tensor for API verification/documentation,
         # then use the existing Step 07 helper's -1/0/1 convention.
         adapter.build_causica_constraint_matrix(columns, forbidden, required)
         constraint_matrix = build_deci_constraint_matrix(columns, forbidden, required)
 
+    run_suffix = str(deci_options.get("run_suffix", "")).strip()
     run_name = f"deci_{dataset_name}_{mode}_seed{seed}"
+    if run_suffix:
+        run_name = f"{run_name}_{run_suffix}"
 
     safe_run_name = run_name.replace("/", "_").replace("\\", "_")
     run_dir = DECI_WORK_DIR / safe_run_name
@@ -1106,9 +1155,15 @@ def train_deci_guarded(
         hidden_dim=np.asarray([preset["hidden_dim"]], dtype=int),
         l1_lambda=np.asarray([preset["l1_lambda"]], dtype=float),
         seed=np.asarray([seed], dtype=int),
-        backend=np.asarray(str(getattr(project_config, "DECI_BACKEND", "causica"))),
+        backend=np.asarray(str(deci_options.get(
+            "backend",
+            getattr(project_config, "DECI_BACKEND", "causica"),
+        ))),
         allow_manual_fallback=np.asarray([
-            bool(getattr(project_config, "DECI_ALLOW_MANUAL_FALLBACK", True))
+            bool(deci_options.get(
+                "allow_manual_fallback",
+                getattr(project_config, "DECI_ALLOW_MANUAL_FALLBACK", True),
+            ))
         ], dtype=bool),
     )
 
@@ -1126,16 +1181,25 @@ def train_deci_guarded(
             cwd=ROOT,
             env={
                 **os.environ,
-                "ESG_DECI_BACKEND": str(getattr(project_config, "DECI_BACKEND", "causica")),
+                "ESG_DECI_BACKEND": str(deci_options.get(
+                    "backend",
+                    getattr(project_config, "DECI_BACKEND", "causica"),
+                )),
                 "ESG_DECI_ALLOW_MANUAL_FALLBACK": (
-                    "1" if bool(getattr(project_config, "DECI_ALLOW_MANUAL_FALLBACK", True)) else "0"
+                    "1" if bool(deci_options.get(
+                        "allow_manual_fallback",
+                        getattr(project_config, "DECI_ALLOW_MANUAL_FALLBACK", True),
+                    )) else "0"
                 ),
             },
             text=True,
             encoding="utf-8",
             errors="replace",
             capture_output=True,
-            timeout=int(preset.get("timeout_seconds", DECI_TIMEOUT_SECONDS)),
+            timeout=int(preset.get(
+                "timeout_seconds",
+                getattr(project_config, "DECI_TIMEOUT_SECONDS", DECI_TIMEOUT_SECONDS),
+            )),
             check=False,
         )
     except subprocess.TimeoutExpired as exc:
@@ -1152,7 +1216,14 @@ def train_deci_guarded(
 
     result = json.loads(output_path.read_text(encoding="utf-8"))
     if result["status"] != "success":
-        raise RuntimeError(result.get("error", "DECI failed"))
+        phase = result.get("phase", "training")
+        exception_type = result.get("exception_type", "RuntimeError")
+        error = result.get("error", "DECI failed")
+        worker_traceback = result.get("traceback", "")
+        raise RuntimeError(
+            f"DECI worker failed during {phase}: {exception_type}: {error}\n"
+            f"Worker traceback:\n{worker_traceback[-2000:]}"
+        )
     backend_metadata = result.get("backend_metadata", {}) or {}
 
     raw_weights_path = ROOT / "outputs" / "graphs" / f"{run_name}_raw_edge_probabilities.csv"
@@ -1171,6 +1242,11 @@ def train_deci_guarded(
         "n_variables": int(len(columns)),
         "device": preset["device"],
         "preset": preset["name"],
+        "config_id": deci_options.get("config_id", ""),
+        "variable_set": deci_options.get("variable_set", "full"),
+        "sparsity_strength": deci_options.get("sparsity_strength", ""),
+        "max_epochs": int(preset["max_epochs"]),
+        "l1_lambda": float(preset["l1_lambda"]),
         "runtime_seconds": round(elapsed, 4),
         "run_name": run_name,
         "run_dir": str(run_dir),
@@ -1271,9 +1347,9 @@ def build_deci_metadata(
 
     return {
         "algorithm": (
-            "deci_native"
+            f"deci_native_{training['mode']}"
             if training.get("backend_used") == "causica_native"
-            else "deci_postproc"
+            else f"deci_postproc_{training['mode']}"
         ),
         "dataset": training["dataset"],
         "mode": training["mode"],
@@ -1756,10 +1832,15 @@ def run_algorithm(
     if algorithm == "deci":
         cache_key = (dataset_name, mode, seed)
         if (
+            bool(getattr(project_config, "DECI_SKIP_AFTER_TIMEOUT", False))
+            and
             cache_key not in DECI_RUN_CACHE
             and time.perf_counter() - total_started > DECI_GLOBAL_ABORT_SECONDS
         ):
-            raise TimeoutError("DECI skipped because total runtime exceeded 30 minutes")
+            raise TimeoutError(
+                f"DECI skipped because total runtime exceeded {DECI_GLOBAL_ABORT_SECONDS}s "
+                "and DECI_SKIP_AFTER_TIMEOUT=True"
+            )
         return run_deci_guarded(data, columns, mode, dataset_name, seed, adapter)
     raise ValueError(f"Unsupported algorithm: {algorithm}")
 
@@ -1809,9 +1890,9 @@ def run_one(
         result_algorithm = "notears_postproc"
     elif algorithm == "deci":
         result_algorithm = (
-            "deci_native"
+            f"deci_native_{mode}"
             if str(getattr(project_config, "DECI_BACKEND", "causica")).lower() == "causica"
-            else "deci_postproc"
+            else f"deci_postproc_{mode}"
         )
     else:
         result_algorithm = algorithm
@@ -1834,7 +1915,9 @@ def run_one(
         else:
             predicted = prediction
         if algorithm == "deci" and metadata.get("backend_used") == "causica_native":
-            result_algorithm = "deci_native"
+            result_algorithm = f"deci_native_{mode}"
+        elif algorithm == "deci" and metadata:
+            result_algorithm = f"deci_postproc_{mode}"
         elapsed = time.perf_counter() - started
 
         row: dict[str, Any] = {
@@ -2028,6 +2111,8 @@ def print_final_summaries(summary: pd.DataFrame) -> None:
         log("  No successful synthetic runs.")
     else:
         for algorithm in sorted(synthetic["algorithm"].unique()):
+            if str(algorithm).startswith("deci_") and str(algorithm).endswith(("_constrained", "_unconstrained")):
+                continue
             sub = synthetic[synthetic["algorithm"] == algorithm]
             uncon = sub[sub["mode"] == "unconstrained"]
             cons = sub[sub["mode"] == "constrained"]
@@ -2036,6 +2121,20 @@ def print_final_summaries(summary: pd.DataFrame) -> None:
             delta = float(cons["f1_directed_mean"].iloc[0] - uncon["f1_directed_mean"].iloc[0])
             log(
                 f"  {algorithm}: "
+                f"F1 uncon={uncon['f1_directed_mean'].iloc[0]:.3f}, "
+                f"con={cons['f1_directed_mean'].iloc[0]:.3f}, "
+                f"DeltaF1={delta:+.3f}; "
+                f"SHD uncon={uncon['shd_mean'].iloc[0]:.2f}, "
+                f"con={cons['shd_mean'].iloc[0]:.2f}"
+            )
+        for prefix in ["deci_native", "deci_postproc"]:
+            uncon = synthetic[synthetic["algorithm"] == f"{prefix}_unconstrained"]
+            cons = synthetic[synthetic["algorithm"] == f"{prefix}_constrained"]
+            if uncon.empty or cons.empty:
+                continue
+            delta = float(cons["f1_directed_mean"].iloc[0] - uncon["f1_directed_mean"].iloc[0])
+            log(
+                f"  {prefix}: "
                 f"F1 uncon={uncon['f1_directed_mean'].iloc[0]:.3f}, "
                 f"con={cons['f1_directed_mean'].iloc[0]:.3f}, "
                 f"DeltaF1={delta:+.3f}; "
@@ -2195,9 +2294,20 @@ def print_deci_interpretation(summary: pd.DataFrame) -> None:
 def main() -> int:
     """Run the full experiment matrix."""
     parser = argparse.ArgumentParser(description="Run constrained causal discovery experiments.")
+    parser.add_argument("--only-deci", action="store_true", help="Run only DECI-related workflows.")
     parser.add_argument("--skip-deci", action="store_true", help="Skip DECI runs.")
     parser.add_argument("--skip-notears", action="store_true", help="Skip NOTEARS runs.")
     parser.add_argument("--skip-lingam", action="store_true", help="Skip LiNGAM runs.")
+    parser.add_argument("--deci-ablation", action="store_true",
+                        help="Run synthetic-only DECI ablation/calibration.")
+    parser.add_argument("--deci-selected-only", action="store_true",
+                        help="Run the synthetic-selected DECI config on real data.")
+    parser.add_argument("--dataset", choices=["synthetic", "synthetic_n2000", "real"],
+                        help="Single dataset alias for focused runs.")
+    parser.add_argument("--backend", choices=["causica", "fallback"],
+                        help="DECI backend override for this run.")
+    parser.add_argument("--variable-set", choices=["full", "reduced", "all"],
+                        default="all", help="DECI variable set for selected/ablation runs.")
     parser.add_argument("--datasets", default="synthetic_n2000,real",
                         help="Comma-separated subset of synthetic_n2000,real.")
     parser.add_argument("--algorithms", default="pc,notears,lingam,deci",
@@ -2206,8 +2316,20 @@ def main() -> int:
                         help="Comma-separated bootstrap seeds.")
     args = parser.parse_args()
 
-    requested_datasets = parse_csv_arg(args.datasets)
-    requested_algorithms = parse_csv_arg(args.algorithms)
+    if args.backend:
+        project_config.DECI_BACKEND = "manual" if args.backend == "fallback" else args.backend
+
+    if args.deci_ablation or args.deci_selected_only:
+        import deci_ablation
+
+        return deci_ablation.run(args)
+
+    if args.dataset:
+        requested_datasets = ["synthetic_n2000" if args.dataset == "synthetic" else args.dataset]
+    else:
+        requested_datasets = parse_csv_arg(args.datasets)
+
+    requested_algorithms = ["deci"] if args.only_deci else parse_csv_arg(args.algorithms)
     seeds = parse_seed_arg(args.seeds)
 
     bad_datasets = sorted(set(requested_datasets) - set(DATASETS))

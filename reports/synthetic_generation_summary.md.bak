@@ -7,8 +7,8 @@ with known directed edges. Edge coefficients are sampled once per run
 and reused across all requested sample sizes, so the data-generating
 process is unchanged when only N changes.
 
-- Variables: 25
-- Edges: 34
+- Variables: 28
+- Edges: 43
 - Seed: 42
 - Noise scale: 1.0
 
@@ -63,6 +63,9 @@ are deliberately loose to preserve recoverable synthetic signal.
 - `debt_to_equity_ratio` (positive)
 - `tobins_q` (positive)
 - `green_financing_eur` (log_normal)
+- `pe_ratio` (positive)
+- `roe_eat` (continuous)
+- `asset_growth_pct` (continuous)
 
 ## Ground-Truth Edges
 
@@ -102,6 +105,15 @@ are deliberately loose to preserve recoverable synthetic signal.
 | environmental_fines                | roa_eat                            | -             | -1.4675     |
 | corruption_cases                   | tobins_q                           | -             | -0.8258     |
 | renewable_energy_share             | green_financing_eur                | +             | 0.8705      |
+| roa_eat                            | roe_eat                            | +             | 0.9696      |
+| debt_to_equity_ratio               | roe_eat                            | +             | 0.6895      |
+| tobins_q                           | pe_ratio                           | +             | 0.6299      |
+| roa_eat                            | pe_ratio                           | +             | 0.9757      |
+| roa_eat                            | asset_growth_pct                   | +             | 0.7269      |
+| total_revenue_eur                  | asset_growth_pct                   | +             | 1.1698      |
+| emission_reduction_policy_score    | pe_ratio                           | +             | 0.9372      |
+| board_strategy_esg_oversight_score | asset_growth_pct                   | +             | 1.3327      |
+| environmental_fines                | asset_growth_pct                   | -             | -1.2003     |
 
 ## Sample Statistics
 
@@ -114,30 +126,33 @@ are deliberately loose to preserve recoverable synthetic signal.
 | variable                           | mean           | std            | min          | median        | max             |
 | ---------------------------------- | -------------- | -------------- | ------------ | ------------- | --------------- |
 | emission_reduction_policy_score    | 3.0            | 1.421          | 1.0          | 3.0           | 5.0             |
-| renewable_energy_share             | 0.502          | 0.245          | 0.057        | 0.515         | 0.939           |
-| scope_1_emissions_tco2e            | 886153.242     | 4435074.41     | 228.572      | 35671.979     | 36655670.719    |
-| scope_2_emissions_tco2e            | 2156544.284    | 12500370.416   | 19.64        | 20794.613     | 120908914.032   |
-| scope_3_emissions_tco2e            | 457369.367     | 911391.45      | 20775.807    | 258123.989    | 8856258.651     |
-| total_energy_consumption           | 2563244.263    | 5607586.862    | 19200.291    | 610931.445    | 35127857.849    |
-| environmental_fines                | 16.711         | 26.12          | 0.205        | 7.877         | 207.114         |
-| iso_14001_exists                   | 0.509          | 0.502          | 0.0          | 1.0           | 1.0             |
-| training_hours                     | 55.784         | 73.026         | 1.683        | 28.722        | 450.485         |
-| injury_frequency_rate              | 2.888          | 1.752          | 0.0          | 2.842         | 7.228           |
-| turnover_rate                      | 0.169          | 0.094          | 0.0          | 0.173         | 0.42            |
-| diversity_representation           | 0.484          | 0.216          | 0.105        | 0.461         | 0.948           |
-| community_investment_eur           | 9877193.891    | 29009703.129   | 14211.728    | 1516646.462   | 200541354.179   |
-| customer_satisfaction_score        | 69.054         | 15.49          | 32.355       | 69.069        | 100.0           |
+| renewable_energy_share             | 0.496          | 0.245          | 0.057        | 0.505         | 0.939           |
+| scope_1_emissions_tco2e            | 883571.721     | 4547165.214    | 95.889       | 36453.287     | 37882448.387    |
+| scope_2_emissions_tco2e            | 822759.475     | 2463981.29     | 4.281        | 16279.699     | 15297467.768    |
+| scope_3_emissions_tco2e            | 446964.569     | 911292.358     | 20775.807    | 232525.761    | 8856258.651     |
+| total_energy_consumption           | 2326737.622    | 5160858.968    | 5122.869     | 584036.797    | 35127857.849    |
+| environmental_fines                | 18.348         | 29.727         | 0.205        | 8.469         | 207.114         |
+| iso_14001_exists                   | 0.491          | 0.502          | 0.0          | 0.0           | 1.0             |
+| training_hours                     | 55.884         | 72.933         | 1.928        | 27.95         | 450.485         |
+| injury_frequency_rate              | 2.912          | 1.714          | 0.0          | 3.003         | 7.361           |
+| turnover_rate                      | 0.171          | 0.096          | 0.0          | 0.175         | 0.427           |
+| diversity_representation           | 0.484          | 0.216          | 0.105        | 0.46          | 0.948           |
+| community_investment_eur           | 9085738.76     | 26509832.561   | 14211.728    | 1516646.462   | 200541354.179   |
+| customer_satisfaction_score        | 68.824         | 16.948         | 20.545       | 67.741        | 100.0           |
 | board_strategy_esg_oversight_score | 3.0            | 1.421          | 1.0          | 3.0           | 5.0             |
-| board_diversity                    | 0.435          | 0.194          | 0.049        | 0.442         | 0.845           |
-| ceo_chair_split                    | 0.6            | 0.492          | 0.0          | 1.0           | 1.0             |
-| auditor_independence_score         | 47.767         | 24.391         | 0.0          | 45.972        | 100.0           |
-| corruption_cases                   | 3.627          | 7.476          | 0.0          | 0.0           | 33.0            |
-| total_asset                        | 1471409234.419 | 3175652655.973 | 10354000.112 | 375657831.344 | 22214074888.389 |
-| total_revenue_eur                  | 1314491940.988 | 2471909660.757 | 3363981.0    | 380011950.154 | 18563212684.236 |
-| roa_eat                            | 0.041          | 0.046          | -0.079       | 0.046         | 0.136           |
-| debt_to_equity_ratio               | 2.701          | 4.145          | 0.368        | 0.838         | 20.086          |
-| tobins_q                           | 2.894          | 2.925          | 0.135        | 1.491         | 7.389           |
-| green_financing_eur                | 272271432.172  | 640353838.504  | 130904.865   | 40791769.14   | 4132908060.842  |
+| board_diversity                    | 0.439          | 0.196          | 0.049        | 0.448         | 0.845           |
+| ceo_chair_split                    | 0.618          | 0.488          | 0.0          | 1.0           | 1.0             |
+| auditor_independence_score         | 47.666         | 24.315         | 0.0          | 47.517        | 100.0           |
+| corruption_cases                   | 3.473          | 6.192          | 0.0          | 0.0           | 27.0            |
+| total_asset                        | 1396362676.173 | 3076165989.883 | 10354000.112 | 375657831.344 | 22214074888.389 |
+| total_revenue_eur                  | 1142974904.329 | 1810987127.525 | 3363981.0    | 389574446.22  | 8379869580.197  |
+| roa_eat                            | 0.043          | 0.05           | -0.093       | 0.047         | 0.163           |
+| debt_to_equity_ratio               | 2.533          | 3.994          | 0.368        | 0.894         | 20.086          |
+| tobins_q                           | 3.219          | 3.277          | 0.135        | 0.992         | 7.389           |
+| green_financing_eur                | 247953246.563  | 525670808.61   | 804512.828   | 43471847.804  | 3725375375.597  |
+| pe_ratio                           | 22.486         | 22.597         | 1.0          | 10.156        | 54.598          |
+| roe_eat                            | 0.016          | 0.109          | -0.3         | 0.012         | 0.29            |
+| asset_growth_pct                   | 0.046          | 0.238          | -0.3         | 0.053         | 0.5             |
 
 ### N = 500
 
@@ -148,30 +163,33 @@ are deliberately loose to preserve recoverable synthetic signal.
 | variable                           | mean           | std            | min         | median        | max             |
 | ---------------------------------- | -------------- | -------------- | ----------- | ------------- | --------------- |
 | emission_reduction_policy_score    | 3.0            | 1.416          | 1.0         | 3.0           | 5.0             |
-| renewable_energy_share             | 0.496          | 0.257          | 0.048       | 0.497         | 0.986           |
-| scope_1_emissions_tco2e            | 564355.299     | 2162798.097    | 15.443      | 35438.05      | 27564205.099    |
-| scope_2_emissions_tco2e            | 4030792.005    | 24930324.976   | 1.324       | 29002.51      | 427886573.78    |
-| scope_3_emissions_tco2e            | 545460.625     | 892212.252     | 9903.837    | 286277.859    | 10921180.576    |
-| total_energy_consumption           | 2538316.866    | 6719722.702    | 4347.161    | 739857.792    | 94268768.438    |
-| environmental_fines                | 19.509         | 37.417         | 0.297       | 8.103         | 373.496         |
-| iso_14001_exists                   | 0.458          | 0.499          | 0.0         | 0.0           | 1.0             |
-| training_hours                     | 62.379         | 95.113         | 0.57        | 29.336        | 780.34          |
-| injury_frequency_rate              | 2.983          | 1.723          | 0.0         | 2.866         | 9.033           |
-| turnover_rate                      | 0.179          | 0.097          | 0.0         | 0.182         | 0.447           |
-| diversity_representation           | 0.493          | 0.208          | 0.068       | 0.483         | 0.969           |
-| community_investment_eur           | 15309952.974   | 96769129.301   | 7842.048    | 2280503.321   | 1682996548.263  |
-| customer_satisfaction_score        | 69.494         | 15.349         | 27.018      | 69.939        | 100.0           |
+| renewable_energy_share             | 0.497          | 0.264          | 0.013       | 0.512         | 0.986           |
+| scope_1_emissions_tco2e            | 690963.076     | 3779330.1      | 52.163      | 39498.561     | 63725349.384    |
+| scope_2_emissions_tco2e            | 2520541.324    | 15817429.048   | 14.718      | 27125.539     | 264170874.477   |
+| scope_3_emissions_tco2e            | 540903.295     | 943468.133     | 11496.8     | 245842.065    | 8156724.801     |
+| total_energy_consumption           | 2679239.124    | 7789069.009    | 12964.322   | 697512.534    | 86263175.217    |
+| environmental_fines                | 18.174         | 32.661         | 0.058       | 8.249         | 344.714         |
+| iso_14001_exists                   | 0.492          | 0.5            | 0.0         | 0.0           | 1.0             |
+| training_hours                     | 64.475         | 95.259         | 1.74        | 30.115        | 780.34          |
+| injury_frequency_rate              | 3.018          | 1.747          | 0.0         | 3.03          | 8.181           |
+| turnover_rate                      | 0.178          | 0.095          | 0.0         | 0.182         | 0.428           |
+| diversity_representation           | 0.502          | 0.208          | 0.044       | 0.508         | 0.969           |
+| community_investment_eur           | 12734835.322   | 43681825.454   | 10929.757   | 2051279.065   | 743419777.089   |
+| customer_satisfaction_score        | 69.924         | 15.309         | 26.961      | 69.903        | 100.0           |
 | board_strategy_esg_oversight_score | 3.0            | 1.416          | 1.0         | 3.0           | 5.0             |
-| board_diversity                    | 0.412          | 0.2            | 0.028       | 0.398         | 0.932           |
-| ceo_chair_split                    | 0.52           | 0.5            | 0.0         | 1.0           | 1.0             |
-| auditor_independence_score         | 49.945         | 25.12          | 0.0         | 50.293        | 100.0           |
-| corruption_cases                   | 3.256          | 6.102          | 0.0         | 0.0           | 30.0            |
-| total_asset                        | 1807143542.018 | 4711015026.172 | 2919526.155 | 522317415.486 | 59678721550.693 |
-| total_revenue_eur                  | 2175816101.687 | 5541665091.972 | 1827216.256 | 516839538.128 | 62213029565.693 |
-| roa_eat                            | 0.043          | 0.046          | -0.121      | 0.047         | 0.172           |
-| debt_to_equity_ratio               | 3.193          | 4.895          | 0.368       | 1.168         | 20.086          |
-| tobins_q                           | 3.057          | 3.074          | 0.135       | 1.36          | 7.389           |
-| green_financing_eur                | 246626679.878  | 621826794.82   | 214562.384  | 41764480.746  | 8811327649.231  |
+| board_diversity                    | 0.401          | 0.201          | 0.028       | 0.388         | 0.921           |
+| ceo_chair_split                    | 0.554          | 0.498          | 0.0         | 1.0           | 1.0             |
+| auditor_independence_score         | 49.245         | 25.644         | 0.0         | 49.606        | 100.0           |
+| corruption_cases                   | 3.21           | 6.012          | 0.0         | 0.0           | 30.0            |
+| total_asset                        | 1706121873.164 | 3865092463.217 | 6911054.756 | 470048950.482 | 50884729497.432 |
+| total_revenue_eur                  | 1781859860.3   | 4451072824.935 | 1827216.256 | 454380660.184 | 50985061915.563 |
+| roa_eat                            | 0.041          | 0.046          | -0.077      | 0.042         | 0.16            |
+| debt_to_equity_ratio               | 2.802          | 4.394          | 0.368       | 0.966         | 20.086          |
+| tobins_q                           | 3.102          | 3.138          | 0.135       | 1.495         | 7.389           |
+| green_financing_eur                | 291443879.034  | 810907675.45   | 191495.133  | 40746157.552  | 9565602626.868  |
+| pe_ratio                           | 23.569         | 23.434         | 1.0         | 9.768         | 54.598          |
+| roe_eat                            | 0.014          | 0.109          | -0.282      | 0.01          | 0.361           |
+| asset_growth_pct                   | 0.053          | 0.233          | -0.3        | 0.059         | 0.5             |
 
 ### N = 2000
 
@@ -182,27 +200,30 @@ are deliberately loose to preserve recoverable synthetic signal.
 | variable                           | mean           | std            | min         | median        | max             |
 | ---------------------------------- | -------------- | -------------- | ----------- | ------------- | --------------- |
 | emission_reduction_policy_score    | 3.0            | 1.415          | 1.0         | 3.0           | 5.0             |
-| renewable_energy_share             | 0.497          | 0.259          | 0.01        | 0.498         | 0.984           |
-| scope_1_emissions_tco2e            | 506662.229     | 2821941.617    | 28.492      | 33947.557     | 93107042.286    |
-| scope_2_emissions_tco2e            | 2041537.554    | 21291593.604   | 1.215       | 29603.603     | 821984729.415   |
-| scope_3_emissions_tco2e            | 573918.975     | 866967.117     | 3164.942    | 287960.3      | 11184666.528    |
-| total_energy_consumption           | 2401538.706    | 7574521.542    | 9893.778    | 696471.821    | 203088925.363   |
-| environmental_fines                | 17.757         | 34.934         | 0.098       | 7.317         | 630.917         |
-| iso_14001_exists                   | 0.522          | 0.5            | 0.0         | 1.0           | 1.0             |
-| training_hours                     | 59.115         | 100.228        | 0.824       | 29.114        | 1656.919        |
-| injury_frequency_rate              | 3.042          | 1.668          | 0.0         | 3.044         | 8.85            |
-| turnover_rate                      | 0.182          | 0.098          | 0.0         | 0.181         | 0.463           |
-| diversity_representation           | 0.505          | 0.21           | 0.04        | 0.502         | 0.972           |
-| community_investment_eur           | 8774669.382    | 30806390.544   | 5765.834    | 1777131.254   | 974371681.803   |
-| customer_satisfaction_score        | 70.467         | 15.891         | 21.274      | 70.953        | 100.0           |
+| renewable_energy_share             | 0.499          | 0.264          | 0.008       | 0.504         | 0.98            |
+| scope_1_emissions_tco2e            | 666650.218     | 4085675.655    | 20.25       | 35091.595     | 97218598.657    |
+| scope_2_emissions_tco2e            | 2726001.031    | 20509986.386   | 1.275       | 26596.907     | 533457039.749   |
+| scope_3_emissions_tco2e            | 582356.669     | 992814.099     | 5850.161    | 271235.593    | 19146592.926    |
+| total_energy_consumption           | 2378395.573    | 5845219.047    | 7962.959    | 761459.568    | 122874740.791   |
+| environmental_fines                | 17.454         | 30.801         | 0.058       | 7.171         | 375.371         |
+| iso_14001_exists                   | 0.485          | 0.5            | 0.0         | 0.0           | 1.0             |
+| training_hours                     | 60.043         | 110.103        | 0.819       | 30.029        | 2334.396        |
+| injury_frequency_rate              | 3.042          | 1.687          | 0.0         | 3.031         | 8.041           |
+| turnover_rate                      | 0.18           | 0.096          | 0.0         | 0.181         | 0.494           |
+| diversity_representation           | 0.505          | 0.203          | 0.049       | 0.506         | 0.952           |
+| community_investment_eur           | 10860447.278   | 59592438.097   | 4508.805    | 1925679.331   | 2064178299.666  |
+| customer_satisfaction_score        | 69.964         | 15.775         | 13.091      | 70.501        | 100.0           |
 | board_strategy_esg_oversight_score | 3.0            | 1.415          | 1.0         | 3.0           | 5.0             |
-| board_diversity                    | 0.423          | 0.2            | 0.033       | 0.408         | 0.93            |
-| ceo_chair_split                    | 0.587          | 0.492          | 0.0         | 1.0           | 1.0             |
-| auditor_independence_score         | 49.39          | 25.739         | 0.0         | 49.661        | 100.0           |
-| corruption_cases                   | 3.122          | 5.75           | 0.0         | 0.0           | 31.0            |
-| total_asset                        | 1468883847.785 | 3606310540.394 | 4564483.287 | 469830717.661 | 69060384799.817 |
-| total_revenue_eur                  | 1663439785.534 | 4846856753.572 | 1345818.438 | 467820544.862 | 72004899337.386 |
-| roa_eat                            | 0.04           | 0.046          | -0.133      | 0.041         | 0.174           |
-| debt_to_equity_ratio               | 2.781          | 4.406          | 0.368       | 0.936         | 20.086          |
-| tobins_q                           | 3.074          | 3.087          | 0.135       | 1.517         | 7.389           |
-| green_financing_eur                | 228607614.96   | 729376556.213  | 113041.06   | 37211325.542  | 19349834350.16  |
+| board_diversity                    | 0.424          | 0.204          | 0.019       | 0.413         | 0.949           |
+| ceo_chair_split                    | 0.58           | 0.494          | 0.0         | 1.0           | 1.0             |
+| auditor_independence_score         | 49.968         | 25.722         | 0.0         | 50.207        | 100.0           |
+| corruption_cases                   | 3.298          | 6.192          | 0.0         | 0.0           | 37.0            |
+| total_asset                        | 1475267365.391 | 3257465269.511 | 3750841.502 | 503668547.768 | 51553616935.979 |
+| total_revenue_eur                  | 1679754684.978 | 4287617139.76  | 1188242.315 | 503144069.933 | 64354599045.11  |
+| roa_eat                            | 0.041          | 0.046          | -0.157      | 0.043         | 0.169           |
+| debt_to_equity_ratio               | 2.785          | 4.298          | 0.368       | 0.999         | 20.086          |
+| tobins_q                           | 3.012          | 3.075          | 0.135       | 1.399         | 7.389           |
+| green_financing_eur                | 231692249.302  | 593054838.773  | 142394.806  | 38782478.468  | 8704414976.779  |
+| pe_ratio                           | 22.734         | 22.627         | 1.0         | 11.269        | 54.598          |
+| roe_eat                            | 0.017          | 0.115          | -0.3        | 0.017         | 0.384           |
+| asset_growth_pct                   | 0.049          | 0.229          | -0.3        | 0.045         | 0.5             |

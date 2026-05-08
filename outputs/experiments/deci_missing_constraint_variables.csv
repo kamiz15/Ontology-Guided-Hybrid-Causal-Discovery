@@ -1,0 +1,8 @@
+dataset,variable_set,source,target,constraint_type,missing_variable_name,closest_matching_dataset_column_names,issue_type,status_after_fix
+synthetic_n2000,reduced,asset_growth_pct,overall_esg_score,forbidden,overall_esg_score,total_asset; customer_satisfaction_score; turnover_rate,possible naming/mapping issue or variable excluded from reduced set,resolved
+synthetic_n2000,reduced,pe_ratio,overall_esg_score,forbidden,overall_esg_score,total_asset; customer_satisfaction_score; turnover_rate,possible naming/mapping issue or variable excluded from reduced set,resolved
+synthetic_n2000,reduced,tobins_q,overall_esg_score,forbidden,overall_esg_score,total_asset; customer_satisfaction_score; turnover_rate,possible naming/mapping issue or variable excluded from reduced set,resolved
+synthetic_n2000,reduced,overall_esg_score,board_diversity,forbidden,overall_esg_score,total_asset; customer_satisfaction_score; turnover_rate,possible naming/mapping issue or variable excluded from reduced set,resolved
+synthetic_n2000,reduced,emission_reduction_policy_score,board_strategy_esg_oversight_score,forbidden,board_strategy_esg_oversight_score,board_diversity,possible naming/mapping issue or variable excluded from reduced set,resolved
+synthetic_n2000,reduced,overall_esg_score,corruption_cases,forbidden,overall_esg_score,total_asset; customer_satisfaction_score; turnover_rate,possible naming/mapping issue or variable excluded from reduced set,resolved
+real,reduced,emission_reduction_policy_score,board_strategy_esg_oversight_score,forbidden,board_strategy_esg_oversight_score,health_safety_score,possible naming/mapping issue or variable excluded from reduced set,resolved

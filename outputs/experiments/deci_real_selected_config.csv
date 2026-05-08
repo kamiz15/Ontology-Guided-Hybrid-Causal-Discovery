@@ -1,0 +1,11 @@
+config_id,dataset,variable_set,mode,seed,threshold,epochs,sparsity_strength,status,runtime_seconds,edge_count,alignment,violations,stable_edges_60,stable_edges_80
+ep20_spcurrent_varsreduced,real,reduced,unconstrained,42,0.35,20,current,success,12.1018,13,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,unconstrained,43,0.35,20,current,success,10.6906,5,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,unconstrained,44,0.35,20,current,success,11.4983,5,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,unconstrained,45,0.35,20,current,success,12.5596,8,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,unconstrained,46,0.35,20,current,success,10.9681,21,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,constrained,42,0.35,20,current,success,10.2539,14,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,constrained,43,0.35,20,current,success,10.6959,8,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,constrained,44,0.35,20,current,success,11.3777,7,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,constrained,45,0.35,20,current,success,11.0326,10,0.0,0,0,0
+ep20_spcurrent_varsreduced,real,reduced,constrained,46,0.35,20,current,success,11.0944,18,0.0,0,0,0

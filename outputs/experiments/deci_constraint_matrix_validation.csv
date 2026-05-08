@@ -1,0 +1,3 @@
+dataset,variable_set,source,target,constraint_type,source_index,target_index,source_exists_in_dataset,target_exists_in_dataset,direction_confirmed,conflicts_with_synthetic_ground_truth,passed_to_causica,notes
+real,reduced,emission_reduction_policy_score,board_strategy_esg_oversight_score,forbidden,3,0,True,True,True,,True,"Causica native constraint_matrix_path supports 0=forbidden, 1=required, NaN=unconstrained in this codebase."
+real,reduced,total_revenue_eur,diversity_representation,forbidden,12,2,True,True,True,,True,"Causica native constraint_matrix_path supports 0=forbidden, 1=required, NaN=unconstrained in this codebase."

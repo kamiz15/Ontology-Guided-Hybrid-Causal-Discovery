@@ -202,6 +202,18 @@ GROUND_TRUTH_EDGES = [
     ("corruption_cases", "tobins_q"),                           # -
     ("renewable_energy_share", "green_financing_eur"),          # +
 
+    # === Literature-required ontology edges used by constrained discovery ===
+    ("board_diversity", "roa_eat"),                              # +
+    ("emission_reduction_policy_score", "roa_eat"),              # +
+    ("emission_reduction_policy_score", "roe_eat"),              # +
+    ("scope_1_emissions_tco2e", "debt_to_equity_ratio"),         # -
+    ("board_diversity", "tobins_q"),                             # +
+    ("customer_satisfaction_score", "roa_eat"),                  # +
+    ("environmental_fines", "debt_to_equity_ratio"),             # +
+    ("iso_14001_exists", "roa_eat"),                             # +
+    ("iso_14001_exists", "tobins_q"),                            # +
+    ("scope_2_emissions_tco2e", "tobins_q"),                     # -
+
     # === Income / valuation cascade ===
     ("roa_eat", "roe_eat"),                                      # +
     ("debt_to_equity_ratio", "roe_eat"),                         # +
@@ -251,6 +263,16 @@ EDGE_SIGNS = {
     ("environmental_fines", "roa_eat"): "-",
     ("corruption_cases", "tobins_q"): "-",
     ("renewable_energy_share", "green_financing_eur"): "+",
+    ("board_diversity", "roa_eat"): "+",
+    ("emission_reduction_policy_score", "roa_eat"): "+",
+    ("emission_reduction_policy_score", "roe_eat"): "+",
+    ("scope_1_emissions_tco2e", "debt_to_equity_ratio"): "-",
+    ("board_diversity", "tobins_q"): "+",
+    ("customer_satisfaction_score", "roa_eat"): "+",
+    ("environmental_fines", "debt_to_equity_ratio"): "+",
+    ("iso_14001_exists", "roa_eat"): "+",
+    ("iso_14001_exists", "tobins_q"): "+",
+    ("scope_2_emissions_tco2e", "tobins_q"): "-",
     ("roa_eat", "roe_eat"): "+",
     ("debt_to_equity_ratio", "roe_eat"): "+",
     ("tobins_q", "pe_ratio"): "+",

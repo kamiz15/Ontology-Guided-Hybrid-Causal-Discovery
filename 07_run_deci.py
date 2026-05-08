@@ -548,54 +548,63 @@ def _run_deci_causica(
         if str(noise_type).lower() == "spline"
         else ContinuousNoiseDist.GAUSSIAN
     )
-    model = DECIModule(
-        noise_dist=noise_dist,
-        embedding_size=hidden_dim,
-        out_dim_g=hidden_dim,
-        num_layers_g=1 if hidden_dim <= 16 else 2,
-        num_layers_zeta=1 if hidden_dim <= 16 else 2,
-        prior_sparsity_lambda=l1_lambda,
-        auglag_config=auglag_config,
-        constraint_matrix_path=str(constraint_path) if constraint_path else None,
-        disable_auglag_epochs=max(0, min(5, max_epochs // 10)),
-    )
+    try:
+        model = DECIModule(
+            noise_dist=noise_dist,
+            embedding_size=hidden_dim,
+            out_dim_g=hidden_dim,
+            num_layers_g=1 if hidden_dim <= 16 else 2,
+            num_layers_zeta=1 if hidden_dim <= 16 else 2,
+            prior_sparsity_lambda=l1_lambda,
+            auglag_config=auglag_config,
+            constraint_matrix_path=str(constraint_path) if constraint_path else None,
+            disable_auglag_epochs=max(0, min(5, max_epochs // 10)),
+        )
+    except Exception as exc:
+        raise RuntimeError(f"Causica model initialization failed: {exc}") from exc
 
     accelerator = "gpu" if str(device).lower().startswith("cuda") and torch.cuda.is_available() else "cpu"
-    trainer = pl.Trainer(
-        max_epochs=max_epochs,
-        logger=False,
-        enable_checkpointing=False,
-        enable_progress_bar=False,
-        accelerator=accelerator,
-        devices=1,
-        deterministic=True,
-        default_root_dir=str(run_dir),
-        num_sanity_val_steps=0,
-        log_every_n_steps=max(1, n_batches),
-    )
-    trainer.fit(model, datamodule=datamodule)
+    try:
+        trainer = pl.Trainer(
+            max_epochs=max_epochs,
+            logger=False,
+            enable_checkpointing=False,
+            enable_progress_bar=False,
+            accelerator=accelerator,
+            devices=1,
+            deterministic=True,
+            default_root_dir=str(run_dir),
+            num_sanity_val_steps=0,
+            log_every_n_steps=max(1, n_batches),
+        )
+        trainer.fit(model, datamodule=datamodule)
+    except Exception as exc:
+        raise RuntimeError(f"Causica training failed: {exc}") from exc
 
     elapsed = time.time() - t0
     model.eval()
-    with torch.no_grad():
-        raw_edge_probs = model.sem_module().mean.graph.detach().cpu().numpy()
-        raw_edge_probs = np.asarray(raw_edge_probs, dtype=float)
-        np.fill_diagonal(raw_edge_probs, 0.0)
+    try:
+        with torch.no_grad():
+            raw_edge_probs = model.sem_module().mean.graph.detach().cpu().numpy()
+            raw_edge_probs = np.asarray(raw_edge_probs, dtype=float)
+            np.fill_diagonal(raw_edge_probs, 0.0)
 
-        edge_probs = raw_edge_probs.copy()
-        if constraint_matrix is not None:
-            constraint_np = np.asarray(constraint_matrix)
-            edge_probs[constraint_np == -1] = 0.0
-            edge_probs[constraint_np == 1] = 1.0
+            edge_probs = raw_edge_probs.copy()
+            if constraint_matrix is not None:
+                constraint_np = np.asarray(constraint_matrix)
+                edge_probs[constraint_np == -1] = 0.0
+                edge_probs[constraint_np == 1] = 1.0
 
-        directed_adj = (edge_probs > edge_threshold).astype(int)
-        if constraint_matrix is not None:
-            constraint_np = np.asarray(constraint_matrix)
-            directed_adj[constraint_np == -1] = 0
-            required_rows, required_cols = np.where(constraint_np == 1)
-            directed_adj[required_rows, required_cols] = 1
-            directed_adj[required_cols, required_rows] = 0
-        np.fill_diagonal(directed_adj, 0)
+            directed_adj = (edge_probs > edge_threshold).astype(int)
+            if constraint_matrix is not None:
+                constraint_np = np.asarray(constraint_matrix)
+                directed_adj[constraint_np == -1] = 0
+                required_rows, required_cols = np.where(constraint_np == 1)
+                directed_adj[required_rows, required_cols] = 1
+                directed_adj[required_cols, required_rows] = 0
+            np.fill_diagonal(directed_adj, 0)
+    except Exception as exc:
+        raise RuntimeError(f"Causica adjacency extraction failed: {exc}") from exc
 
     n_edges = count_edges(directed_adj)
     print(f"\n  Native Causica final graph: {n_edges} directed edges (threshold={edge_threshold})")
