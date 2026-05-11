@@ -315,3 +315,26 @@ delete source PDFs. Run `python organize_papers.py --dry-run` first, then run
 - [ ] Run `python organize_papers.py` only after the dry run looks correct
 - [ ] Review `organization_manifest.csv` after copying
 - [ ] Manually inspect each `group_*` folder before deleting or moving loose PDFs
+
+---
+
+## Runtime measurement limitations (RQ3)
+
+- gCastle's NOTEARS caches optimization results across repeated calls on the
+  same data. Per-seed runtimes after the first call return cached results,
+  making naive mean-based runtime comparison unreliable for NOTEARS. The
+  23_runtime_analysis.py script now flags this via a coefficient-of-variation
+  check.
+- outputs/experiments/results.csv at the time of RQ3 analysis contains only
+  advisor_dummy rows. Real ECB (N=110) and causal_dummy_v2 (N=3000) runtime
+  measurements are absent. Future work: rerun those datasets and rebuild the
+  runtime comparison to verify whether the PC speedup pattern holds across
+  data scales.
+- Constraint-count sensitivity (runtime as a function of number of constraints
+  applied) was not measured. The PC speedup with the current constraint set
+  suggests this would be informative; left as future work.
+- DECI runtime is not directly comparable to other algorithms because DECI runs
+  on a different schedule (ablation grid + selected configurations) rather
+  than the standard seed loop. DECI runtime observations are documented
+  separately in deci_report.md and deci_diagnostics.csv rather than in
+  runtime_comparison.csv.

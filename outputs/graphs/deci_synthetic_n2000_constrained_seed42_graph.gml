@@ -140,17 +140,12 @@ graph [
   ]
   edge [
     source 0
+    target 25
+    weight 1.0
+  ]
+  edge [
+    source 0
     target 26
-    weight 1.0
-  ]
-  edge [
-    source 1
-    target 3
-    weight 1.0
-  ]
-  edge [
-    source 1
-    target 31
     weight 1.0
   ]
   edge [
@@ -169,13 +164,13 @@ graph [
     weight 1.0
   ]
   edge [
-    source 5
-    target 27
+    source 6
+    target 22
     weight 1.0
   ]
   edge [
     source 6
-    target 22
+    target 23
     weight 1.0
   ]
   edge [
@@ -199,18 +194,8 @@ graph [
     weight 1.0
   ]
   edge [
-    source 8
-    target 28
-    weight 1.0
-  ]
-  edge [
     source 9
-    target 4
-    weight 1.0
-  ]
-  edge [
-    source 10
-    target 13
+    target 10
     weight 1.0
   ]
   edge [
@@ -244,11 +229,6 @@ graph [
     weight 1.0
   ]
   edge [
-    source 18
-    target 17
-    weight 1.0
-  ]
-  edge [
     source 20
     target 19
     weight 1.0
@@ -259,23 +239,33 @@ graph [
     weight 1.0
   ]
   edge [
-    source 23
-    target 5
+    source 21
+    target 27
+    weight 1.0
+  ]
+  edge [
+    source 22
+    target 26
     weight 1.0
   ]
   edge [
     source 25
-    target 17
+    target 21
     weight 1.0
   ]
   edge [
-    source 26
-    target 6
+    source 30
+    target 15
     weight 1.0
   ]
   edge [
-    source 27
-    target 7
+    source 31
+    target 16
+    weight 1.0
+  ]
+  edge [
+    source 31
+    target 28
     weight 1.0
   ]
   edge [

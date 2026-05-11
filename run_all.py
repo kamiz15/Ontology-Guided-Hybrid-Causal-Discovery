@@ -28,6 +28,7 @@ import sys
 import time
 import traceback
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -44,11 +45,20 @@ FAILURES_PATH = RESULTS_DIR / "failures.csv"
 DECI_DIAGNOSTICS_PATH = RESULTS_DIR / "deci_diagnostics.csv"
 DECI_THRESHOLD_SWEEP_PATH = RESULTS_DIR / "deci_threshold_sweep.csv"
 DECI_STABLE_EDGES_PATH = RESULTS_DIR / "deci_stable_edges.csv"
+GES_STABLE_EDGES_PATH = RESULTS_DIR / "ges_stable_edges.csv"
+ADVISOR_DUMMY_RESULTS_PATH = RESULTS_DIR / "advisor_dummy_results.csv"
+ADVISOR_DUMMY_SUMMARY_PATH = RESULTS_DIR / "advisor_dummy_results_summary.csv"
+ADVISOR_DUMMY_ABLATION_PATH = RESULTS_DIR / "advisor_dummy_constraint_ablation.csv"
+ADVISOR_DUMMY_ABLATION_SUMMARY_PATH = RESULTS_DIR / "advisor_dummy_constraint_ablation_summary.csv"
+ADVISOR_DUMMY_ABLATION_REPORT_PATH = RESULTS_DIR / "advisor_dummy_constraint_ablation_report.md"
+ADVISOR_DUMMY_FINAL_REPORT_PATH = RESULTS_DIR / "advisor_dummy_final_report.md"
+ADVISOR_DUMMY_LEGACY_REPORT_PATH = RESULTS_DIR / "advisor_dummy_report.md"
 DECI_WORK_DIR = RESULTS_DIR / "deci_work"
 DECI_TIMEOUT_SECONDS = int(getattr(project_config, "DECI_TIMEOUT_SECONDS", 300))
 DECI_GLOBAL_ABORT_SECONDS = int(getattr(project_config, "DECI_TIMEOUT_SECONDS", 1800))
 NOTEARS_NOTE_PRINTED = False
 CURRENT_DECI_THRESHOLD = float(getattr(project_config, "DECI_THRESHOLD", 0.275))
+ADVISOR_DUMMY_CONSTRAINT_MODE = "forbidden_only"
 DECI_RUN_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
 
 DATASETS = {
@@ -57,12 +67,21 @@ DATASETS = {
         "ground_truth": ROOT / "data" / "synthetic" / "ground_truth_adjacency.csv",
         "constraint_dataset": "synthetic",
         "has_ground_truth": True,
+        "evaluation_mode": "synthetic_true_dag_eval",
     },
     "real": {
         "path": ROOT / "data" / "processed" / "data_ready.csv",
         "ground_truth": None,
         "constraint_dataset": "real",
         "has_ground_truth": False,
+        "evaluation_mode": "real_literature_eval",
+    },
+    "advisor_dummy": {
+        "path": ROOT / "data" / "processed" / "advisor_dummy_ready.csv",
+        "ground_truth": ROOT / "outputs" / "experiments" / "advisor_dummy_reference_dag_adjacency.csv",
+        "constraint_dataset": "advisor_dummy",
+        "has_ground_truth": True,
+        "evaluation_mode": "reference_dag_eval",
     },
 }
 
@@ -70,6 +89,11 @@ RESULT_COLUMNS = [
     "algorithm",
     "mode",
     "dataset",
+    "evaluation_mode",
+    "evaluation_target",
+    "constraint_mode",
+    "forbidden_constraints_count",
+    "required_constraints_count",
     "seed",
     "runtime_seconds",
     "status",
@@ -97,6 +121,8 @@ NUMERIC_SUMMARY_COLUMNS = [
     "literature_agreement_count",
     "literature_violation_count",
     "literature_alignment_score",
+    "forbidden_constraints_count",
+    "required_constraints_count",
 ]
 
 DECI_DIAGNOSTIC_COLUMNS = [
@@ -180,6 +206,21 @@ DECI_STABLE_EDGE_COLUMNS = [
     "required_edge",
 ]
 
+GES_STABLE_EDGE_COLUMNS = [
+    "dataset",
+    "constraint_mode",
+    "mode",
+    "source",
+    "target",
+    "frequency",
+    "appears_in_60_percent",
+    "appears_in_80_percent",
+    "forbidden_edge",
+    "required_edge",
+    "ontology_supported",
+    "literature_supported",
+]
+
 DECI_PRESETS = {
     "fast_debug": {
         "max_epochs": 5,
@@ -245,6 +286,8 @@ def ensure_outputs() -> None:
         csv.DictWriter(handle, fieldnames=DECI_THRESHOLD_SWEEP_COLUMNS).writeheader()
     with DECI_STABLE_EDGES_PATH.open("w", newline="", encoding="utf-8") as handle:
         csv.DictWriter(handle, fieldnames=DECI_STABLE_EDGE_COLUMNS).writeheader()
+    with GES_STABLE_EDGES_PATH.open("w", newline="", encoding="utf-8") as handle:
+        csv.DictWriter(handle, fieldnames=GES_STABLE_EDGE_COLUMNS).writeheader()
 
 
 def append_result(row: dict[str, Any]) -> None:
@@ -345,6 +388,7 @@ def load_module_from_path(module_name: str, path: Path) -> Any:
     if spec is None or spec.loader is None:
         raise ImportError(f"Could not import {path}")
     module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -352,6 +396,39 @@ def load_module_from_path(module_name: str, path: Path) -> Any:
 def load_adapter() -> Any:
     """Load ``14_constraint_adapter.py``."""
     return load_module_from_path("constraint_adapter_step_14", ROOT / "14_constraint_adapter.py")
+
+
+def advisor_dummy_evaluation_target() -> str:
+    """Return the advisor-dummy evaluation target label."""
+    explicit_rule_names = [
+        "generation_rules.csv",
+        "advisor_rules.csv",
+        "ground_truth_dag.csv",
+        "reference_dag_edges.csv",
+        "dag_edges.csv",
+        "causal_rules.csv",
+    ]
+    advisor_dir = ROOT / "data" / "advisor_dummy"
+    if any((advisor_dir / name).exists() for name in explicit_rule_names):
+        return "advisor_rule_ground_truth_dag"
+    return "ontology_derived_reference_dag"
+
+
+def dataset_constraint_mode(dataset_name: str) -> str:
+    """Return the active constraint mode for a dataset."""
+    if dataset_name == "advisor_dummy":
+        return ADVISOR_DUMMY_CONSTRAINT_MODE
+    return "standard"
+
+
+def ensure_advisor_dummy_artifacts(allow_dummy_regeneration: bool) -> None:
+    """Build advisor-dummy cleaned data and reference-DAG artifacts."""
+    builder = load_module_from_path("advisor_dummy_reference_builder", ROOT / "05_build_reference_dag_from_dummy.py")
+    result = builder.build_reference(SimpleNamespace(
+        allow_dummy_regeneration=allow_dummy_regeneration,
+    ))
+    if result != 0:
+        raise RuntimeError("advisor_dummy reference-DAG build failed")
 
 
 def load_dataset(dataset_name: str) -> tuple[pd.DataFrame, np.ndarray | None, list[str]]:
@@ -370,11 +447,21 @@ def load_dataset(dataset_name: str) -> tuple[pd.DataFrame, np.ndarray | None, li
         and variable names.
     """
     config = DATASETS[dataset_name]
+    if not Path(config["path"]).exists() and dataset_name == "advisor_dummy":
+        raise FileNotFoundError(
+            "Advisor dummy CSV/XLSX files not found. Place them in data/advisor_dummy/. "
+            "The final advisor_dummy path must use the provided files."
+        )
     df = pd.read_csv(config["path"])
     df = df.select_dtypes(include="number").dropna().copy()
 
     true_adj: np.ndarray | None = None
     if config["has_ground_truth"]:
+        if not Path(config["ground_truth"]).exists() and dataset_name == "advisor_dummy":
+            raise FileNotFoundError(
+                "advisor_dummy reference DAG adjacency is missing. Run "
+                "`.\\.venv\\Scripts\\python.exe 05_build_reference_dag_from_dummy.py` first."
+            )
         true_df = pd.read_csv(config["ground_truth"], index_col=0)
         common = [
             column for column in df.columns
@@ -449,6 +536,48 @@ def load_constraints(dataset_name: str, adapter: Any) -> tuple[list[tuple[str, s
         Forbidden and required constraints.
     """
     constraint_dataset = DATASETS[dataset_name]["constraint_dataset"]
+    if constraint_dataset == "advisor_dummy":
+        mode = ADVISOR_DUMMY_CONSTRAINT_MODE
+        forbidden_path = ROOT / "outputs" / "experiments" / "advisor_dummy_constraints_forbidden.csv"
+        required_paths = {
+            "none": None,
+            "forbidden_only": None,
+            "required_light": ROOT / "outputs" / "experiments" / "advisor_dummy_constraints_required_light.csv",
+            "full_reference_sanity": ROOT / "outputs" / "experiments" / "advisor_dummy_constraints_full_reference_required.csv",
+        }
+        if mode not in required_paths:
+            raise ValueError(f"Unsupported advisor_dummy constraint mode: {mode}")
+        required_path = required_paths[mode]
+        if not forbidden_path.exists() and mode != "none":
+            raise FileNotFoundError(
+                "advisor_dummy constraints are missing. Run "
+                "`.\\.venv\\Scripts\\python.exe 05_build_reference_dag_from_dummy.py` first."
+            )
+        if required_path is not None and not required_path.exists():
+            raise FileNotFoundError(
+                f"advisor_dummy required constraint file is missing for mode {mode}: {required_path}"
+            )
+        forbidden: list[tuple[str, str]] = []
+        required: list[tuple[str, str]] = []
+        if mode != "none":
+            forbidden_df = pd.read_csv(forbidden_path)
+            forbidden = [
+                (str(row["cause"]).strip(), str(row["effect"]).strip())
+                for _, row in forbidden_df.iterrows()
+                if str(row.get("cause", "")).strip() and str(row.get("effect", "")).strip()
+            ]
+        if required_path is not None:
+            required_df = pd.read_csv(required_path)
+            required = [
+                (str(row["cause"]).strip(), str(row["effect"]).strip())
+                for _, row in required_df.iterrows()
+                if str(row.get("cause", "")).strip() and str(row.get("effect", "")).strip()
+            ]
+        log(
+            f"advisor_dummy constraints ({mode}): loaded {len(forbidden)} forbidden, "
+            f"{len(required)} required"
+        )
+        return forbidden, required
     forbidden, required, _ = adapter.load_constraints_for_dataset(constraint_dataset)
     return forbidden, required
 
@@ -783,6 +912,7 @@ def run_notears(
 
         np.fill_diagonal(directed, 0)
         post_processing_changed = int(np.sum(directed != before))
+        log(f"NOTEARS post-processing changed {post_processing_changed} cells")
 
     return directed, {"post_processing_changed": post_processing_changed}
 
@@ -831,6 +961,64 @@ def run_lingam(
         np.fill_diagonal(directed, 0)
 
     return directed
+
+
+def run_ges(
+    data: np.ndarray,
+    columns: list[str],
+    mode: str,
+    dataset_name: str,
+    seed: int,
+    adapter: Any,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """
+    Run causal-learn GES with explicit post-processing constraints.
+
+    Causal-learn GES does not expose native background knowledge in the
+    installed API, so constrained GES is labeled as ``ges_postproc``.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Standardized bootstrap sample.
+    columns : list[str]
+        Variable names.
+    mode : str
+        unconstrained or constrained.
+    dataset_name : str
+        Dataset label.
+    seed : int
+        Bootstrap seed.
+    adapter : Any
+        Constraint adapter module.
+
+    Returns
+    -------
+    tuple[np.ndarray, dict[str, Any]]
+        Directed binary adjacency and GES diagnostics.
+    """
+    module = load_module_from_path("step_08_run_ges", ROOT / "08_run_ges.py")
+
+    forbidden: list[tuple[str, str]] = []
+    required: list[tuple[str, str]] = []
+    if mode == "constrained":
+        forbidden, required = load_constraints(dataset_name, adapter)
+        if dataset_name != "advisor_dummy":
+            required = []
+        elif dataset_constraint_mode(dataset_name) == "forbidden_only":
+            required = []
+
+    return module.run_ges(
+        data=data,
+        columns=columns,
+        mode=mode,
+        dataset_name=dataset_name,
+        seed=seed,
+        forbidden=forbidden,
+        required=required,
+        constraint_mode=dataset_constraint_mode(dataset_name),
+        output_dir=RESULTS_DIR / "graphs",
+    )
 
 
 def build_deci_constraint_matrix(
@@ -1829,6 +2017,8 @@ def run_algorithm(
         return run_notears(data, columns, mode, dataset_name, adapter)
     if algorithm == "lingam":
         return run_lingam(data, columns, mode, dataset_name, adapter)
+    if algorithm == "ges":
+        return run_ges(data, columns, mode, dataset_name, seed, adapter)
     if algorithm == "deci":
         cache_key = (dataset_name, mode, seed)
         if (
@@ -1888,6 +2078,8 @@ def run_one(
     started = time.perf_counter()
     if algorithm == "notears":
         result_algorithm = "notears_postproc"
+    elif algorithm == "ges":
+        result_algorithm = "ges_postproc"
     elif algorithm == "deci":
         result_algorithm = (
             f"deci_native_{mode}"
@@ -1919,11 +2111,17 @@ def run_one(
         elif algorithm == "deci" and metadata:
             result_algorithm = f"deci_postproc_{mode}"
         elapsed = time.perf_counter() - started
+        selected_forbidden, selected_required = load_constraints(dataset_name, adapter)
 
         row: dict[str, Any] = {
             "algorithm": result_algorithm,
             "mode": mode,
             "dataset": dataset_name,
+            "evaluation_mode": DATASETS[dataset_name].get("evaluation_mode", ""),
+            "evaluation_target": advisor_dummy_evaluation_target() if dataset_name == "advisor_dummy" else "",
+            "constraint_mode": dataset_constraint_mode(dataset_name),
+            "forbidden_constraints_count": len(selected_forbidden),
+            "required_constraints_count": len(selected_required),
             "seed": seed,
             "runtime_seconds": round(elapsed, 4),
             "status": "success",
@@ -1931,6 +2129,20 @@ def run_one(
 
         if true_adj is not None:
             row.update(compute_synthetic_metrics(predicted, true_adj))
+            if DATASETS[dataset_name].get("evaluation_mode") == "reference_dag_eval":
+                truth_pairs = {
+                    (columns[i], columns[j])
+                    for i, j in zip(*np.where((np.asarray(true_adj) != 0).astype(int) == 1))
+                }
+                pred_pairs = {
+                    (columns[i], columns[j])
+                    for i, j in zip(*np.where((np.asarray(predicted) != 0).astype(int) == 1))
+                }
+                agreement = len(pred_pairs & truth_pairs)
+                violations = count_pairs(predicted, selected_forbidden, columns)
+                row["literature_agreement_count"] = agreement
+                row["literature_violation_count"] = violations
+                row["literature_alignment_score"] = agreement / (agreement + violations + 1e-9)
             if algorithm == "deci":
                 log(
                     f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
@@ -1947,6 +2159,15 @@ def run_one(
                     f"post_processing_changed={metadata.get('post_processing_changed', 0)} cells "
                     f"({elapsed:.1f}s)"
                 )
+            elif algorithm == "ges":
+                log(
+                    f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
+                    f"edges={row['edge_count_predicted']}, "
+                    f"F1={row['f1_directed']:.3f}, "
+                    f"violations={row.get('literature_violation_count', 0)}, "
+                    f"post_processing_changed={metadata.get('post_processing_changed', 0)} cells "
+                    f"({elapsed:.1f}s)"
+                )
             else:
                 log(
                     f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
@@ -1954,9 +2175,8 @@ def run_one(
                     f"({elapsed:.1f}s)"
                 )
         else:
-            forbidden, _ = load_constraints(dataset_name, adapter)
             literature_supported = load_literature_supported_pairs(columns)
-            row.update(compute_real_metrics(predicted, columns, forbidden, literature_supported))
+            row.update(compute_real_metrics(predicted, columns, selected_forbidden, literature_supported))
             if algorithm == "deci":
                 log(
                     f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
@@ -1971,6 +2191,15 @@ def run_one(
                     f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
                     f"edges={row['edge_count_predicted']}, "
                     f"F1=nan, "
+                    f"post_processing_changed={metadata.get('post_processing_changed', 0)} cells "
+                    f"({elapsed:.1f}s)"
+                )
+            elif algorithm == "ges":
+                log(
+                    f"{result_algorithm}/{mode}/{dataset_name}/seed={seed}: "
+                    f"edges={row['edge_count_predicted']}, "
+                    f"align={row['literature_alignment_score']:.3f}, "
+                    f"violations={row['literature_violation_count']}, "
                     f"post_processing_changed={metadata.get('post_processing_changed', 0)} cells "
                     f"({elapsed:.1f}s)"
                 )
@@ -1996,6 +2225,11 @@ def run_one(
             "algorithm": result_algorithm,
             "mode": mode,
             "dataset": dataset_name,
+            "evaluation_mode": DATASETS[dataset_name].get("evaluation_mode", ""),
+            "evaluation_target": advisor_dummy_evaluation_target() if dataset_name == "advisor_dummy" else "",
+            "constraint_mode": dataset_constraint_mode(dataset_name),
+            "forbidden_constraints_count": "",
+            "required_constraints_count": "",
             "seed": seed,
             "runtime_seconds": round(elapsed, 4),
             "status": f"failed: {exc}",
@@ -2054,6 +2288,11 @@ def append_skipped_rows(
                     "algorithm": algorithm,
                     "mode": mode,
                     "dataset": dataset_name,
+                    "evaluation_mode": DATASETS[dataset_name].get("evaluation_mode", ""),
+                    "evaluation_target": advisor_dummy_evaluation_target() if dataset_name == "advisor_dummy" else "",
+                    "constraint_mode": dataset_constraint_mode(dataset_name),
+                    "forbidden_constraints_count": "",
+                    "required_constraints_count": "",
                     "seed": seed,
                     "runtime_seconds": 0.0,
                     "status": f"skipped: {reason}",
@@ -2073,14 +2312,18 @@ def write_summary() -> pd.DataFrame:
     results = pd.read_csv(RESULTS_PATH)
     success = results[results["status"] == "success"].copy()
     if success.empty:
-        summary = pd.DataFrame(columns=["algorithm", "mode", "dataset", "successful_runs"])
+        summary = pd.DataFrame(columns=[
+            "algorithm", "mode", "dataset", "constraint_mode",
+            "evaluation_target", "successful_runs",
+        ])
         summary.to_csv(SUMMARY_PATH, index=False)
         return summary
 
     for column in NUMERIC_SUMMARY_COLUMNS:
         success[column] = pd.to_numeric(success[column], errors="coerce")
 
-    grouped = success.groupby(["algorithm", "mode", "dataset"], dropna=False)
+    group_columns = ["algorithm", "mode", "dataset", "constraint_mode", "evaluation_target"]
+    grouped = success.groupby(group_columns, dropna=False)
     pieces = [grouped.size().rename("successful_runs")]
     for column in NUMERIC_SUMMARY_COLUMNS:
         pieces.append(grouped[column].mean().rename(f"{column}_mean"))
@@ -2092,7 +2335,7 @@ def write_summary() -> pd.DataFrame:
 
 def print_final_summaries(summary: pd.DataFrame) -> None:
     """
-    Print synthetic and real headline summary tables.
+    Print synthetic, real, and advisor-dummy headline summary tables.
 
     Parameters
     ----------
@@ -2154,6 +2397,264 @@ def print_final_summaries(summary: pd.DataFrame) -> None:
                 f"edges={row['edge_count_predicted_mean']:.2f}, "
                 f"violations={row['literature_violation_count_mean']:.2f}"
             )
+
+    advisor_dummy = summary[summary["dataset"].eq("advisor_dummy")].copy()
+    if not advisor_dummy.empty:
+        log("Advisor dummy reference-DAG results:")
+        for _, row in advisor_dummy.sort_values(["algorithm", "mode"]).iterrows():
+            log(
+                f"  {row['algorithm']}/{row['mode']}: "
+                f"F1={row['f1_directed_mean']:.3f} "
+                f"+/- {row['f1_directed_std']:.3f}, "
+                f"SHD={row['shd_mean']:.2f} +/- {row['shd_std']:.2f}, "
+                f"edges={row['edge_count_predicted_mean']:.2f}, "
+                f"violations={row['literature_violation_count_mean']:.2f}"
+            )
+
+
+def format_advisor_rows(summary: pd.DataFrame) -> str:
+    """Return markdown rows for advisor-dummy summary data."""
+    rows = []
+    for _, row in summary.sort_values(["constraint_mode", "algorithm", "mode"]).iterrows():
+        rows.append(
+            "| {constraint_mode} | {algorithm} | {mode} | {runs} | "
+            "{f1:.4f} +/- {f1s:.4f} | {shd:.2f} +/- {shds:.2f} | "
+            "{edges:.2f} | {viol:.2f} |".format(
+                constraint_mode=row.get("constraint_mode", ""),
+                algorithm=row["algorithm"],
+                mode=row["mode"],
+                runs=int(row.get("successful_runs", 0)),
+                f1=float(row.get("f1_directed_mean", np.nan)),
+                f1s=float(row.get("f1_directed_std", 0.0)),
+                shd=float(row.get("shd_mean", np.nan)),
+                shds=float(row.get("shd_std", 0.0)),
+                edges=float(row.get("edge_count_predicted_mean", np.nan)),
+                viol=float(row.get("literature_violation_count_mean", 0.0)),
+            )
+        )
+    return "\n".join(rows)
+
+
+def update_advisor_dummy_ablation(summary: pd.DataFrame) -> pd.DataFrame:
+    """Append/update advisor-dummy constraint-ablation summary files."""
+    dummy = summary[summary["dataset"].eq("advisor_dummy")].copy()
+    if dummy.empty:
+        return pd.DataFrame()
+
+    if ADVISOR_DUMMY_ABLATION_SUMMARY_PATH.exists():
+        existing = pd.read_csv(ADVISOR_DUMMY_ABLATION_SUMMARY_PATH)
+    else:
+        existing = pd.DataFrame()
+    if not existing.empty:
+        current_modes = set(dummy["constraint_mode"].astype(str))
+        current_algorithms = set(dummy["algorithm"].astype(str))
+        existing = existing[
+            ~(
+                existing["constraint_mode"].astype(str).isin(current_modes)
+                & existing["algorithm"].astype(str).isin(current_algorithms)
+            )
+        ].copy()
+    combined_summary = pd.concat([existing, dummy], ignore_index=True)
+    combined_summary.to_csv(ADVISOR_DUMMY_ABLATION_SUMMARY_PATH, index=False)
+
+    if RESULTS_PATH.exists():
+        results = pd.read_csv(RESULTS_PATH)
+        current_results = results[results["dataset"].eq("advisor_dummy")].copy()
+        if ADVISOR_DUMMY_ABLATION_PATH.exists():
+            existing_results = pd.read_csv(ADVISOR_DUMMY_ABLATION_PATH)
+        else:
+            existing_results = pd.DataFrame()
+        if not existing_results.empty and not current_results.empty:
+            current_modes = set(current_results["constraint_mode"].astype(str))
+            current_algorithms = set(current_results["algorithm"].astype(str))
+            existing_results = existing_results[
+                ~(
+                    existing_results["constraint_mode"].astype(str).isin(current_modes)
+                    & existing_results["algorithm"].astype(str).isin(current_algorithms)
+                )
+            ].copy()
+        combined_results = pd.concat([existing_results, current_results], ignore_index=True)
+        combined_results.to_csv(ADVISOR_DUMMY_ABLATION_PATH, index=False)
+
+    return combined_summary
+
+
+def write_advisor_dummy_reports(summary: pd.DataFrame) -> None:
+    """Write advisor-dummy result, ablation, and final-report artifacts."""
+    dummy = summary[summary["dataset"].eq("advisor_dummy")].copy()
+    dummy.to_csv(ADVISOR_DUMMY_SUMMARY_PATH, index=False)
+    if RESULTS_PATH.exists():
+        results = pd.read_csv(RESULTS_PATH)
+        results[results["dataset"].eq("advisor_dummy")].to_csv(ADVISOR_DUMMY_RESULTS_PATH, index=False)
+
+    combined = update_advisor_dummy_ablation(summary)
+    if combined.empty:
+        ADVISOR_DUMMY_FINAL_REPORT_PATH.write_text(
+            "# Advisor Dummy Final Report\n\nNo successful advisor_dummy runs were found.\n",
+            encoding="utf-8",
+        )
+        return
+
+    validation_text = ""
+    validation_path = RESULTS_DIR / "advisor_dummy_reference_dag_validation.md"
+    if validation_path.exists():
+        validation_text = validation_path.read_text(encoding="utf-8")
+
+    metadata_loaded = (ROOT / "data" / "advisor_dummy" / "ESG-Finance_Metadata.xlsx").exists()
+    explicit_rules_found = advisor_dummy_evaluation_target() == "advisor_rule_ground_truth_dag"
+    audit_path = RESULTS_DIR / "advisor_dummy_data_audit.csv"
+    cleaned_shape = ""
+    original_shape = ""
+    if audit_path.exists() and (ROOT / "data" / "processed" / "advisor_dummy_ready.csv").exists():
+        cleaned = pd.read_csv(ROOT / "data" / "processed" / "advisor_dummy_ready.csv")
+        cleaned_shape = f"{cleaned.shape[0]} rows x {cleaned.shape[1]} columns"
+    source_csv = ROOT / "data" / "advisor_dummy" / "ESG-Finance_dummy_data.csv"
+    if source_csv.exists():
+        source_df = pd.read_csv(source_csv)
+        original_shape = f"{source_df.shape[0]} rows x {source_df.shape[1]} columns"
+
+    forbidden_count = 0
+    required_light_count = 0
+    full_required_count = 0
+    forbidden_path = RESULTS_DIR / "advisor_dummy_constraints_forbidden.csv"
+    required_light_path = RESULTS_DIR / "advisor_dummy_constraints_required_light.csv"
+    full_required_path = RESULTS_DIR / "advisor_dummy_constraints_full_reference_required.csv"
+    if forbidden_path.exists():
+        forbidden_count = len(pd.read_csv(forbidden_path))
+    if required_light_path.exists():
+        required_light_count = len(pd.read_csv(required_light_path))
+    if full_required_path.exists():
+        full_required_count = len(pd.read_csv(full_required_path))
+
+    def section_for(mode: str, title: str) -> str:
+        sub = combined[combined["constraint_mode"].astype(str).eq(mode)].copy()
+        if sub.empty:
+            return f"## {title}\n\nNo rows recorded yet.\n"
+        return (
+            f"## {title}\n\n"
+            "| constraint mode | algorithm | mode | successful runs | F1 directed mean +/- std | SHD mean +/- std | mean edge count | mean violations |\n"
+            "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |\n"
+            f"{format_advisor_rows(sub)}\n"
+        )
+
+    def ges_interpretation() -> str:
+        sub = combined[
+            combined["constraint_mode"].astype(str).eq("forbidden_only")
+            & combined["algorithm"].astype(str).eq("ges_postproc")
+        ].copy()
+        if sub.empty:
+            return (
+                "GES is a classical score-based baseline. No advisor-dummy GES "
+                "rows have been recorded yet.\n"
+            )
+        uncon = sub[sub["mode"].astype(str).eq("unconstrained")]
+        cons = sub[sub["mode"].astype(str).eq("constrained")]
+        if uncon.empty or cons.empty:
+            return (
+                "GES is a classical score-based baseline. Current advisor-dummy "
+                "GES rows are incomplete, so unconstrained versus forbidden-only "
+                "comparison is not yet available.\n"
+            )
+        uncon_f1 = float(uncon["f1_directed_mean"].iloc[0])
+        cons_f1 = float(cons["f1_directed_mean"].iloc[0])
+        uncon_viol = float(uncon["literature_violation_count_mean"].iloc[0])
+        cons_viol = float(cons["literature_violation_count_mean"].iloc[0])
+        if cons_viol < uncon_viol and cons_f1 < 0.10:
+            return (
+                "GES is a classical score-based baseline. In the main "
+                "`forbidden_only` comparison, constraints reduce forbidden-edge "
+                f"violations from {uncon_viol:.2f} to {cons_viol:.2f}, while "
+                f"F1 remains low ({uncon_f1:.4f} to {cons_f1:.4f}). This is "
+                "consistent with the advisor dummy data containing limited "
+                "statistical signal matching the ontology-derived reference DAG; "
+                "it should not be overclaimed as causal recovery.\n"
+            )
+        return (
+            "GES is a classical score-based baseline. Its advisor-dummy results "
+            f"under `forbidden_only` change F1 from {uncon_f1:.4f} to "
+            f"{cons_f1:.4f} and forbidden-edge violations from {uncon_viol:.2f} "
+            f"to {cons_viol:.2f}. These values should be interpreted as "
+            "reference-DAG alignment and constraint-compliance evidence.\n"
+        )
+
+    ablation_report = f"""# Advisor Dummy Constraint Ablation Report
+
+The advisor-provided dummy dataset is evaluated against an
+ontology-derived reference DAG unless an explicit advisor causal rule file is
+present.
+
+- `forbidden_only` is the main constrained experiment.
+- `required_light` is a secondary experiment with only a small set of
+  high-confidence required edges.
+- `full_reference_sanity` is only a constraint-enforcement sanity check.
+- Near-perfect results under `full_reference_sanity` reflect constraint
+  enforcement, not independent discovery.
+
+{section_for("none", "No Constraints")}
+{section_for("forbidden_only", "Main: Forbidden Only")}
+{section_for("required_light", "Secondary: Required Light")}
+{section_for("full_reference_sanity", "Sanity Check: Full Reference Required")}
+"""
+    ADVISOR_DUMMY_ABLATION_REPORT_PATH.write_text(ablation_report, encoding="utf-8")
+
+    final_report = f"""# Advisor Dummy Final Report
+
+## Source Files
+
+- CSV: `data/advisor_dummy/ESG-Finance_dummy_data.csv`
+- Metadata workbook: `data/advisor_dummy/ESG-Finance_Metadata.xlsx`
+- Text generator/spec: `data/advisor_dummy/Dummy_dataset_ESG.txt`
+
+## Data
+
+- Original CSV shape: {original_shape or "unknown"}
+- Cleaned model dataset shape: {cleaned_shape or "unknown"}
+- Metadata XLSX loaded: {metadata_loaded}
+- Explicit advisor causal rules found: {explicit_rules_found}
+- Evaluation target: `{advisor_dummy_evaluation_target()}`
+
+## Constraints
+
+- Forbidden constraints: {forbidden_count}
+- Required-light constraints: {required_light_count}
+- Full-reference required constraints: {full_required_count}
+
+## GES Baseline
+
+{ges_interpretation()}
+
+## Methodological Wording
+
+The raw advisor dummy data does not include explicit causal equations, a
+causal edge list, or a causal DAG. Because no explicit advisor causal rule
+file was found, the current graph is an ontology-derived reference DAG.
+F1 and SHD therefore measure reference-DAG alignment, not recovery of an
+experimentally known causal mechanism.
+
+## Validation Snapshot
+
+```text
+{validation_text.strip()}
+```
+
+{section_for("forbidden_only", "Main Results: Forbidden Only")}
+{section_for("required_light", "Secondary Results: Required Light")}
+{section_for("full_reference_sanity", "Sanity Results: Full Reference Required")}
+
+## Limitations
+
+The main comparison should be unconstrained versus `forbidden_only`, because
+that does not give algorithms the full reference structure as required edges.
+The `full_reference_sanity` condition is useful only to verify that adapters
+and post-processing honor constraints.
+"""
+    ADVISOR_DUMMY_FINAL_REPORT_PATH.write_text(final_report, encoding="utf-8")
+    ADVISOR_DUMMY_LEGACY_REPORT_PATH.write_text(final_report, encoding="utf-8")
+
+    log(f"Advisor dummy results -> {ADVISOR_DUMMY_RESULTS_PATH.relative_to(ROOT)}")
+    log(f"Advisor dummy summary -> {ADVISOR_DUMMY_SUMMARY_PATH.relative_to(ROOT)}")
+    log(f"Advisor dummy ablation -> {ADVISOR_DUMMY_ABLATION_PATH.relative_to(ROOT)}")
+    log(f"Advisor dummy final report -> {ADVISOR_DUMMY_FINAL_REPORT_PATH.relative_to(ROOT)}")
 
 
 def write_deci_stable_edges(adapter: Any) -> pd.DataFrame:
@@ -2230,6 +2731,100 @@ def write_deci_stable_edges(adapter: Any) -> pd.DataFrame:
     return stable
 
 
+def write_ges_stable_edges(adapter: Any) -> pd.DataFrame:
+    """
+    Write GES edge-frequency stability table across bootstrap seeds.
+
+    Parameters
+    ----------
+    adapter : Any
+        Constraint adapter.
+
+    Returns
+    -------
+    pd.DataFrame
+        GES stable-edge rows.
+    """
+    if not RESULTS_PATH.exists():
+        stable = pd.DataFrame(columns=GES_STABLE_EDGE_COLUMNS)
+        stable.to_csv(GES_STABLE_EDGES_PATH, index=False)
+        return stable
+
+    results = pd.read_csv(RESULTS_PATH)
+    ges_rows = results[
+        results["algorithm"].astype(str).eq("ges_postproc")
+        & results["status"].astype(str).eq("success")
+    ].copy()
+    if ges_rows.empty:
+        stable = pd.DataFrame(columns=GES_STABLE_EDGE_COLUMNS)
+        stable.to_csv(GES_STABLE_EDGES_PATH, index=False)
+        return stable
+
+    graph_dir = RESULTS_DIR / "graphs"
+    rows: list[dict[str, Any]] = []
+    for (dataset_name, constraint_mode, mode), group in ges_rows.groupby(
+        ["dataset", "constraint_mode", "mode"],
+        dropna=False,
+    ):
+        dataset_name = str(dataset_name)
+        constraint_mode = str(constraint_mode)
+        mode = str(mode)
+        _, true_adj, columns = load_dataset(dataset_name)
+        forbidden, required = load_constraints(dataset_name, adapter)
+        forbidden_set = set(forbidden)
+        required_set = set(required)
+        literature_supported = load_literature_supported_pairs(columns) if dataset_name == "real" else set()
+        ontology_supported: set[tuple[str, str]] = set()
+        if true_adj is not None:
+            ontology_supported = {
+                (columns[i], columns[j])
+                for i, j in zip(*np.where((np.asarray(true_adj) != 0).astype(int) == 1))
+            }
+
+        edge_counts: dict[tuple[str, str], int] = {}
+        usable_runs = 0
+        for _, result_row in group.iterrows():
+            seed = int(result_row["seed"])
+            label = "unconstrained" if mode == "unconstrained" else (
+                constraint_mode
+                if constraint_mode in {"forbidden_only", "required_light", "full_reference_sanity"}
+                else "forbidden_only"
+            )
+            path = graph_dir / f"ges_{dataset_name}_{label}_seed{seed}.csv"
+            if not path.exists():
+                continue
+            adjacency_df = pd.read_csv(path, index_col=0)
+            adjacency = (adjacency_df.to_numpy() != 0).astype(int)
+            path_columns = adjacency_df.columns.tolist()
+            usable_runs += 1
+            for i, j in zip(*np.where(adjacency == 1)):
+                edge = (path_columns[i], path_columns[j])
+                edge_counts[edge] = edge_counts.get(edge, 0) + 1
+
+        if usable_runs == 0:
+            continue
+        for (source, target), count in sorted(edge_counts.items()):
+            frequency = count / usable_runs
+            rows.append({
+                "dataset": dataset_name,
+                "constraint_mode": constraint_mode,
+                "mode": mode,
+                "source": source,
+                "target": target,
+                "frequency": frequency,
+                "appears_in_60_percent": frequency >= 0.6,
+                "appears_in_80_percent": frequency >= 0.8,
+                "forbidden_edge": (source, target) in forbidden_set,
+                "required_edge": (source, target) in required_set,
+                "ontology_supported": (source, target) in ontology_supported,
+                "literature_supported": (source, target) in literature_supported,
+            })
+
+    stable = pd.DataFrame(rows, columns=GES_STABLE_EDGE_COLUMNS)
+    stable.to_csv(GES_STABLE_EDGES_PATH, index=False)
+    return stable
+
+
 def print_deci_interpretation(summary: pd.DataFrame) -> None:
     """
     Print automated DECI diagnostic interpretation.
@@ -2302,22 +2897,33 @@ def main() -> int:
                         help="Run synthetic-only DECI ablation/calibration.")
     parser.add_argument("--deci-selected-only", action="store_true",
                         help="Run the synthetic-selected DECI config on real data.")
-    parser.add_argument("--dataset", choices=["synthetic", "synthetic_n2000", "real"],
+    parser.add_argument("--dataset", choices=["synthetic", "synthetic_n2000", "real", "advisor_dummy"],
                         help="Single dataset alias for focused runs.")
+    parser.add_argument("--constraint-mode",
+                        choices=["none", "forbidden_only", "required_light", "full_reference_sanity"],
+                        default="forbidden_only",
+                        help="Advisor-dummy constraint set. Default: forbidden_only.")
+    parser.add_argument("--allow-dummy-regeneration", action="store_true",
+                        help="Development-only fallback if advisor dummy CSV/XLSX files are absent.")
     parser.add_argument("--backend", choices=["causica", "fallback"],
                         help="DECI backend override for this run.")
     parser.add_argument("--variable-set", choices=["full", "reduced", "all"],
                         default="all", help="DECI variable set for selected/ablation runs.")
     parser.add_argument("--datasets", default="synthetic_n2000,real",
-                        help="Comma-separated subset of synthetic_n2000,real.")
+                        help="Comma-separated subset of synthetic_n2000,real,advisor_dummy.")
+    parser.add_argument("--algorithm",
+                        help="Single algorithm alias for --algorithms, e.g. --algorithm ges.")
     parser.add_argument("--algorithms", default="pc,notears,lingam,deci",
-                        help="Comma-separated subset of pc,notears,lingam,deci.")
+                        help="Comma-separated subset of pc,notears,lingam,ges,deci.")
     parser.add_argument("--seeds", default="42,43,44,45,46",
                         help="Comma-separated bootstrap seeds.")
     args = parser.parse_args()
 
     if args.backend:
         project_config.DECI_BACKEND = "manual" if args.backend == "fallback" else args.backend
+
+    global ADVISOR_DUMMY_CONSTRAINT_MODE
+    ADVISOR_DUMMY_CONSTRAINT_MODE = args.constraint_mode
 
     if args.deci_ablation or args.deci_selected_only:
         import deci_ablation
@@ -2329,14 +2935,19 @@ def main() -> int:
     else:
         requested_datasets = parse_csv_arg(args.datasets)
 
-    requested_algorithms = ["deci"] if args.only_deci else parse_csv_arg(args.algorithms)
+    if args.only_deci:
+        requested_algorithms = ["deci"]
+    elif args.algorithm:
+        requested_algorithms = [args.algorithm.strip()]
+    else:
+        requested_algorithms = parse_csv_arg(args.algorithms)
     seeds = parse_seed_arg(args.seeds)
 
     bad_datasets = sorted(set(requested_datasets) - set(DATASETS))
     if bad_datasets:
         parser.error(f"Unsupported datasets: {bad_datasets}")
 
-    allowed_algorithms = {"pc", "notears", "lingam", "deci"}
+    allowed_algorithms = {"pc", "notears", "lingam", "ges", "deci"}
     bad_algorithms = sorted(set(requested_algorithms) - allowed_algorithms)
     if bad_algorithms:
         parser.error(f"Unsupported algorithms: {bad_algorithms}")
@@ -2354,6 +2965,9 @@ def main() -> int:
     ensure_outputs()
     total_started = time.perf_counter()
     adapter = load_adapter()
+
+    if "advisor_dummy" in requested_datasets:
+        ensure_advisor_dummy_artifacts(args.allow_dummy_regeneration)
 
     if "notears" in requested_algorithms and args.skip_notears:
         append_skipped_rows("notears", requested_datasets, seeds, "--skip-notears")
@@ -2400,7 +3014,10 @@ def main() -> int:
                     )
 
     summary = write_summary()
+    if "advisor_dummy" in requested_datasets:
+        write_advisor_dummy_reports(summary)
     write_deci_stable_edges(adapter)
+    write_ges_stable_edges(adapter)
     print_final_summaries(summary)
     print_deci_interpretation(summary)
     log(f"Total runtime: {time.perf_counter() - total_started:.1f}s")
@@ -2409,6 +3026,7 @@ def main() -> int:
     log(f"DECI diagnostics -> {DECI_DIAGNOSTICS_PATH.relative_to(ROOT)}")
     log(f"DECI threshold sweep -> {DECI_THRESHOLD_SWEEP_PATH.relative_to(ROOT)}")
     log(f"DECI stable edges -> {DECI_STABLE_EDGES_PATH.relative_to(ROOT)}")
+    log(f"GES stable edges -> {GES_STABLE_EDGES_PATH.relative_to(ROOT)}")
     return 0
 
 

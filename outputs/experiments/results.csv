@@ -1,21 +1,41 @@
-algorithm,mode,dataset,seed,runtime_seconds,status,edge_count_predicted,edge_count_true,shd,f1_directed,f1_skeleton,precision,recall,literature_agreement_count,literature_violation_count,literature_alignment_score
-deci_native,unconstrained,synthetic_n2000,42,0.0209,success,54,65,97,0.18487394957983194,0.3025210084033613,0.2037037037037037,0.16923076923076924,,,
-deci_native,unconstrained,synthetic_n2000,43,0.0193,success,59,65,84,0.3225806451612903,0.7580645161290323,0.3389830508474576,0.3076923076923077,,,
-deci_native,unconstrained,synthetic_n2000,44,0.025,success,54,65,81,0.319327731092437,0.638655462184874,0.35185185185185186,0.2923076923076923,,,
-deci_native,unconstrained,synthetic_n2000,45,0.0242,success,51,65,82,0.29310344827586204,0.5344827586206896,0.3333333333333333,0.26153846153846155,,,
-deci_native,unconstrained,synthetic_n2000,46,0.0217,success,73,65,122,0.11594202898550725,0.3941605839416058,0.1095890410958904,0.12307692307692308,,,
-deci_native,constrained,synthetic_n2000,42,0.0229,success,74,65,109,0.21582733812949642,0.3165467625899281,0.20270270270270271,0.23076923076923078,,,
-deci_native,constrained,synthetic_n2000,43,0.0234,success,62,65,97,0.2362204724409449,0.6141732283464566,0.24193548387096775,0.23076923076923078,,,
-deci_native,constrained,synthetic_n2000,44,0.0237,success,54,65,81,0.319327731092437,0.5546218487394958,0.35185185185185186,0.2923076923076923,,,
-deci_native,constrained,synthetic_n2000,45,0.0244,success,58,65,81,0.34146341463414637,0.5528455284552846,0.3620689655172414,0.3230769230769231,,,
-deci_native,constrained,synthetic_n2000,46,0.0184,success,84,65,127,0.14765100671140938,0.2818791946308725,0.13095238095238096,0.16923076923076924,,,
-deci_native,unconstrained,real,42,22.3379,success,41,,,,,,,0,0,0.0
-deci_native,unconstrained,real,43,22.5954,success,54,,,,,,,1,0,0.9999999989999999
-deci_native,unconstrained,real,44,22.2502,success,46,,,,,,,1,0,0.9999999989999999
-deci_native,unconstrained,real,45,22.5665,success,84,,,,,,,0,2,0.0
-deci_native,unconstrained,real,46,22.6121,success,55,,,,,,,0,0,0.0
-deci_native,constrained,real,42,22.0262,success,40,,,,,,,0,0,0.0
-deci_native,constrained,real,43,22.7121,success,55,,,,,,,0,0,0.0
-deci_native,constrained,real,44,21.2054,success,46,,,,,,,0,0,0.0
-deci_postproc,constrained,real,45,4387.3743,failed: DECI exceeded 180s timeout,,,,,,,,,,
-deci_postproc,constrained,real,46,0.0007,failed: DECI skipped because total runtime exceeded 30 minutes,,,,,,,,,,
+algorithm,mode,dataset,evaluation_mode,evaluation_target,constraint_mode,forbidden_constraints_count,required_constraints_count,seed,runtime_seconds,status,edge_count_predicted,edge_count_true,shd,f1_directed,f1_skeleton,precision,recall,literature_agreement_count,literature_violation_count,literature_alignment_score
+deci_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,42,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,43,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,44,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,45,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,46,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,42,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,43,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,44,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,45,0.0,skipped: --skip-deci,,,,,,,,,,
+deci_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,,,46,0.0,skipped: --skip-deci,,,,,,,,,,
+pc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,42,3.4922,success,83,46,129,0.0,0.031007751937984503,0.0,0.0,0,0,0.0
+pc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,43,1.1912,success,85,46,129,0.015267175572519083,0.061068702290076333,0.011764705882352941,0.021739130434782608,1,0,0.9999999989999999
+pc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,44,0.8516,success,85,46,131,0.0,0.030534351145038167,0.0,0.0,0,0,0.0
+pc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,45,1.2758,success,90,46,134,0.014705882352941176,0.044117647058823525,0.011111111111111112,0.021739130434782608,1,0,0.9999999989999999
+pc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,46,0.8305,success,73,46,115,0.03361344537815126,0.05042016806722689,0.0273972602739726,0.043478260869565216,2,0,0.9999999995
+pc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,42,1.4421,success,83,46,129,0.0,0.031007751937984503,0.0,0.0,0,0,0.0
+pc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,43,1.2548,success,85,46,129,0.015267175572519083,0.061068702290076333,0.011764705882352941,0.021739130434782608,1,0,0.9999999989999999
+pc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,44,0.8856,success,85,46,131,0.0,0.030534351145038167,0.0,0.0,0,0,0.0
+pc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,45,1.4143,success,90,46,134,0.014705882352941176,0.044117647058823525,0.011111111111111112,0.021739130434782608,1,0,0.9999999989999999
+pc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,46,0.8628,success,73,46,115,0.03361344537815126,0.05042016806722689,0.0273972602739726,0.043478260869565216,2,0,0.9999999995
+notears_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,42,2.8331,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,43,0.0195,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,44,0.0297,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,45,0.0213,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,46,0.0224,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,42,0.0194,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,43,0.0201,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,44,0.0192,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,45,0.0213,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+notears_postproc,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,46,0.0332,success,0,46,46,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,42,14.736,success,5,46,51,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,43,14.1417,success,17,46,63,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,44,13.2722,success,8,46,54,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,45,13.4364,success,14,46,60,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,unconstrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,46,13.79,success,17,46,63,0.0,0.031746031746031744,0.0,0.0,0,0,0.0
+lingam,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,42,14.0614,success,5,46,51,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,43,13.9304,success,17,46,63,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,44,13.4421,success,8,46,54,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,45,13.674,success,14,46,60,0.0,0.0,0.0,0.0,0,0,0.0
+lingam,constrained,advisor_dummy,reference_dag_eval,ontology_derived_reference_dag,none,0,0,46,13.3937,success,17,46,63,0.0,0.031746031746031744,0.0,0.0,0,0,0.0

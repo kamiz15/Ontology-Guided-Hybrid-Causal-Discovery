@@ -1,313 +1,459 @@
-# Ontology-Guided Hybrid Causal Discovery
+# Ontology-Guided Hybrid Causal Discovery For ESG Data
 
-This repository contains an ESG-focused causal discovery workflow built around one canonical banking workbook, ontology-style edge constraints, multiple causal discovery backends, optional Gemma-based reasoning, and a small exchange-rate helper pipeline for mixed-currency fields.
+This repository contains the experiment pipeline for a thesis on
+ontology-guided hybrid causal discovery for ESG and finance data. The project
+compares unconstrained causal discovery with ontology-constrained variants
+across an advisor-provided dummy dataset and a real ECB case-study dataset.
 
-The current default raw input is:
+The current thesis-safe framing is:
 
-- `data/raw/df_asst_bnk_ecb.xlsx`
+- The advisor dummy dataset is the official dummy-data experiment.
+- No explicit advisor-provided causal generation DAG/rule file was found.
+- Advisor-dummy F1 and SHD are evaluated against an
+  ontology-derived reference DAG, not an experimentally known causal mechanism.
+- Real ECB results are a case study only; they report literature alignment,
+  edge counts, stability, and forbidden-edge violations, not F1/SHD.
 
-The project is centered on the scripts in the repo root, with shared paths defined in [config.py](./config.py).
+## Current Inputs
 
-## What Is In The Repo Now
-
-- A standardized 01-09 causal discovery pipeline for the ECB workbook
-- An optional Gemma proposal step in [08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py)
-- A supplementary edge-evaluation step in [10_gemma_evaluate.py](./10_gemma_evaluate.py)
-- A one-command orchestrator in [run_all.py](./run_all.py)
-- A PowerShell environment bootstrap in [setup_venv.ps1](./setup_venv.ps1)
-- An exchange-rate extraction and currency-normalization helper workflow under [exchange_rates](./exchange_rates) and [check_del_after.py](./check_del_after.py)
-- Tracked reports, graphs, and figures under [reports](./reports) and [outputs](./outputs)
-
-## Project Layout
+Advisor dummy files:
 
 ```text
-go/
-|-- 01_audit.py
-|-- 02_clean.py
-|-- 03_build_column_mapping.py
-|-- 04_forbidden_edges.py
-|-- 05_run_baselines.py
-|-- 06_run_notears.py
-|-- 07_run_deci.py
-|-- 08_gemma_causal_proposals.py
-|-- 09_visualize_graphs.py
-|-- 10_gemma_evaluate.py
-|-- check_del_after.py
-|-- config.py
-|-- io_utils.py
-|-- run_all.py
-|-- setup_venv.ps1
-|-- requirements.txt
-|-- data/
-|   |-- raw/
-|   |   `-- df_asst_bnk_ecb.xlsx
-|   `-- processed/
-|       |-- data_clean.csv
-|       |-- data_ready.csv
-|       |-- column_mapping.csv
-|       `-- df_asst_bnk_ecb_processed.xlsx
-|-- docs/
-|   `-- WEEK2_README.md
-|-- exchange_rates/
-|   |-- exchange_rate_2025.pdf
-|   |-- ecb_rates_2025.csv
-|   `-- extract_ecb_rates.py
-|-- outputs/
-|   |-- figures/
-|   |-- gemma_eval/
-|   |-- graphs/
-|   `-- metrics/
-|-- reports/
-|   |-- audit_report.txt
-|   |-- data_cleaning_summary.md
-|   |-- gemma_causal_reasoning.txt
-|   `-- high_correlation_pairs.csv
-`-- scripts/
-    |-- check_del_after.py
-    `-- run_full_pipeline.ps1
+data/advisor_dummy/ESG-Finance_dummy_data.csv
+data/advisor_dummy/ESG-Finance_Metadata.xlsx
+data/advisor_dummy/Dummy_dataset_ESG.txt
 ```
+
+Real ECB modeling data:
+
+```text
+data/processed/data_ready.csv
+```
+
+The original raw ECB workbook workflow is still present, but the final
+advisor-dummy experiment uses the advisor-provided CSV and metadata directly.
+
+## Main Algorithms
+
+The current experiment runner supports:
+
+- PC: constraint-based, uses causal-learn background knowledge where available.
+- LiNGAM: functional causal model, constraints applied by post-processing.
+- NOTEARS: continuous optimization, constraints applied by post-processing
+  because gCastle `Notears.learn()` ignores prior-knowledge kwargs.
+- GES: classical score-based baseline through causal-learn GES, constraints
+  applied by post-processing and labeled `ges_postproc`.
+- DECI/Causica: deep generative baseline, native Causica constraints where
+  supported; treated as exploratory because of data-size and runtime
+  sensitivity.
+
+## Constraint Modes
+
+For `advisor_dummy`, the important constraint modes are:
+
+- `none`: unconstrained baseline.
+- `forbidden_only`: main thesis-safe constrained setting.
+- `required_light`: secondary setting with a small number of high-confidence
+  definitional required edges.
+- `full_reference_sanity`: appendix-only constraint-enforcement check where
+  required edges equal the reference DAG. This must not be presented as
+  independent discovery evidence.
+
+The main comparison is `none` versus `forbidden_only`.
+
+## Key Scripts
+
+```text
+05_build_reference_dag_from_dummy.py     Build advisor-dummy registry, cleaned data, reference DAG, constraints
+08_run_ges.py                            Run causal-learn GES and post-process constraints
+09_make_final_figures.py                 Generate final thesis figures and captions
+14_constraint_adapter.py                 Convert shared constraints into algorithm-specific formats
+20_create_final_result_tables.py         Create final consolidated result tables and markdown summary
+21_significance_tests.py                 Wilcoxon signed-rank tests: constrained vs unconstrained per algorithm
+22_snr_sensitivity_sweep.py              SNR sensitivity sweep on causal dummy v2 data (known ground-truth DAG)
+generate_causal_dummy.py                 Generate ESG dummy data with actual structural equations (causal v2)
+run_all.py                               Main experiment runner
+deci_ablation.py                         DECI ablation, diagnostics, selected-config runs
+07_run_deci.py                           DECI/Causica runner and fallback path
+```
+
+Legacy and supporting scripts for cleaning, Gemma checks, synthetic data,
+and visualizations are still included in the repository.
 
 ## Quick Start
 
-Create and populate the project-local virtual environment:
+Create and activate the project-local virtual environment:
 
 ```powershell
 .\setup_venv.ps1
 .\.venv\Scripts\Activate.ps1
 ```
 
-The checked-in [requirements.txt](./requirements.txt) covers the core pipeline dependencies, including:
-
-- `pandas`, `numpy`, `scipy`, `openpyxl`
-- `causal-learn`, `lingam`, `gcastle`, `cdt`
-- `networkx`, `matplotlib`, `pyvis`
-- `torch`, `transformers`
-- `pdfplumber`
-- `rdflib`
-
-Optional extras:
-
-- Google Gemma evaluation currently needs `google-genai`
-- Some `07_run_deci.py` paths may benefit from `causica`, but the script still has a fallback path when it is unavailable
-
-Install the Google client only if you plan to use the Google backend:
+Install dependencies if needed:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install google-genai
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-## End-To-End Runs
+## Rebuild Advisor-Dummy Reference Artifacts
 
-Run the main pipeline from the repo root:
+Build the cleaned advisor-dummy modeling matrix, metadata registry,
+ontology-derived reference DAG, and constraint files:
 
 ```powershell
-.\.venv\Scripts\python.exe run_all.py
+.\.venv\Scripts\python.exe 05_build_reference_dag_from_dummy.py
 ```
 
-Useful variants:
+This writes the main advisor-dummy artifacts:
+
+```text
+data/processed/advisor_dummy_ready.csv
+outputs/experiments/advisor_dummy_data_audit.csv
+outputs/experiments/advisor_dummy_metadata_registry.csv
+outputs/experiments/advisor_dummy_reference_dag_edges.csv
+outputs/experiments/advisor_dummy_reference_dag_adjacency.csv
+outputs/experiments/advisor_dummy_reference_dag_validation.md
+outputs/experiments/advisor_dummy_constraints_forbidden.csv
+outputs/experiments/advisor_dummy_constraints_required_light.csv
+outputs/experiments/advisor_dummy_constraints_full_reference_required.csv
+```
+
+The builder does not silently regenerate the advisor dummy data. Development
+fallback from `Dummy_dataset_ESG.txt` is only allowed with:
 
 ```powershell
-.\.venv\Scripts\python.exe run_all.py --with-fx
-.\.venv\Scripts\python.exe run_all.py --with-gemma --gemma-backend ollama
-.\.venv\Scripts\python.exe run_all.py --with-gemma --gemma-backend google --gemma-model gemma-4-26b-a4b-it --gemma-api-key YOUR_KEY
-.\.venv\Scripts\python.exe run_all.py --epochs 200 --mode both
+.\.venv\Scripts\python.exe 05_build_reference_dag_from_dummy.py --allow-dummy-regeneration
 ```
 
-Notes:
+## Run Experiments
 
-- [run_all.py](./run_all.py) automatically relaunches itself inside `.venv\Scripts\python.exe` when that interpreter exists
-- `--with-fx` runs the exchange-rate helper flow before the main modeling pipeline
-- `--with-gemma` adds the Gemma-backed steps
-- The Hugging Face backend is supported by [08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py), but [10_gemma_evaluate.py](./10_gemma_evaluate.py) currently supports only `ollama` and `google`, so `run_all.py` skips step 10 for `huggingface`
-
-If you only want the non-LLM pipeline, the repo also includes:
+Advisor dummy, main constrained setting:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/run_full_pipeline.ps1
+.\.venv\Scripts\python.exe run_all.py --dataset advisor_dummy --algorithms pc,notears,lingam,ges,deci --constraint-mode forbidden_only
 ```
 
-## Pipeline Steps
-
-- [01_audit.py](./01_audit.py): profiles the raw workbook and writes an audit report
-- [02_clean.py](./02_clean.py): cleans, scores, coerces, and imputes the raw ESG data into modeling-ready numeric outputs, with a horizontal/anonymized cleaning summary
-- [03_build_column_mapping.py](./03_build_column_mapping.py): creates the variable mapping used downstream
-- [04_forbidden_edges.py](./04_forbidden_edges.py): builds ontology-inspired edge constraints
-- [05_run_baselines.py](./05_run_baselines.py): runs PC and LiNGAM baselines
-- [06_run_notears.py](./06_run_notears.py): runs NOTEARS
-- [07_run_deci.py](./07_run_deci.py): runs DECI in constrained and unconstrained modes
-- [08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py): asks Gemma to propose plausible direct ESG causal edges
-- [09_visualize_graphs.py](./09_visualize_graphs.py): produces high-resolution comparison figures, graph visuals, scatter diagnostics, and a data-correlation heatmap
-- [10_gemma_evaluate.py](./10_gemma_evaluate.py): asks Gemma to qualitatively score discovered edges across the graph outputs
-
-## Data And Processed Outputs
-
-The repo is standardized around:
-
-- raw input: [data/raw/df_asst_bnk_ecb.xlsx](./data/raw/df_asst_bnk_ecb.xlsx)
-
-Main processed artifacts:
-
-- [data/processed/data_clean.csv](./data/processed/data_clean.csv)
-- [data/processed/data_ready.csv](./data/processed/data_ready.csv)
-- [data/processed/column_mapping.csv](./data/processed/column_mapping.csv)
-- [data/processed/df_asst_bnk_ecb_processed.xlsx](./data/processed/df_asst_bnk_ecb_processed.xlsx)
-
-The current cleaner keeps a compact causal-ready feature set and converts mixed raw workbook fields into consistently numeric modeling inputs for the downstream graph algorithms.
-
-### Cleaning Orientation
-
-The data cleaning step is described as horizontal analysis: each row is one confidential bank/entity observation, and each column is an ESG or financial variable. Direct identifiers and administrative fields such as bank names, LEI/MFI codes, row IDs, and other metadata are excluded before causal discovery. The modeling dataset therefore uses anonymized row-level observations rather than identifiable bank names as causal variables.
-
-The cleaner also writes [reports/data_cleaning_summary.md](./reports/data_cleaning_summary.md), which records the horizontal-analysis decision, excluded metadata columns, final data shape, and correlation-check method.
-
-### Correlation Check
-
-The correlation analysis is a redundancy diagnostic, not causal evidence. [02_clean.py](./02_clean.py) selects numeric columns, computes the Pearson correlation matrix, takes absolute correlations, and writes variable pairs above `HIGH_CORR_THRESHOLD` to [reports/high_correlation_pairs.csv](./reports/high_correlation_pairs.csv). Only exact duplicate columns with correlation equal to `1.0` are automatically dropped; high but non-perfect pairs are kept and reported for interpretation.
-
-## Exchange-Rate Helper Workflow
-
-The mixed-currency helper flow is kept separate from the main modeling pipeline so it can be rerun independently.
-
-Step 1: extract ECB exchange rates from the PDF.
+Advisor dummy, constraint ablation:
 
 ```powershell
-.\.venv\Scripts\python.exe exchange_rates/extract_ecb_rates.py
+.\.venv\Scripts\python.exe run_all.py --dataset advisor_dummy --algorithms pc,notears,lingam,ges,deci --constraint-mode none
+.\.venv\Scripts\python.exe run_all.py --dataset advisor_dummy --algorithms pc,notears,lingam,ges,deci --constraint-mode forbidden_only
+.\.venv\Scripts\python.exe run_all.py --dataset advisor_dummy --algorithms pc,notears,lingam,ges,deci --constraint-mode required_light
+.\.venv\Scripts\python.exe run_all.py --dataset advisor_dummy --algorithms pc,notears,lingam,ges,deci --constraint-mode full_reference_sanity
 ```
 
-Step 2: parse workbook money fields and write EUR-normalized helper columns.
+Real ECB case-study runs:
 
 ```powershell
-.\.venv\Scripts\python.exe check_del_after.py
+.\.venv\Scripts\python.exe run_all.py --dataset real --algorithms pc,notears,lingam,ges --skip-deci
+.\.venv\Scripts\python.exe run_all.py --only-deci --deci-selected-only --dataset real
 ```
 
-Equivalent helper entry point:
+Focused GES runs:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/check_del_after.py
+.\.venv\Scripts\python.exe run_all.py --dataset advisor_dummy --algorithm ges --constraint-mode forbidden_only
+.\.venv\Scripts\python.exe run_all.py --dataset real --algorithm ges
 ```
 
-Main exchange-rate artifacts:
-
-- [exchange_rates/exchange_rate_2025.pdf](./exchange_rates/exchange_rate_2025.pdf)
-- [exchange_rates/ecb_rates_2025.csv](./exchange_rates/ecb_rates_2025.csv)
-- [data/processed/df_asst_bnk_ecb_processed.xlsx](./data/processed/df_asst_bnk_ecb_processed.xlsx)
-
-## Gemma Workflows
-
-### 08. Causal Edge Proposals
-
-[08_gemma_causal_proposals.py](./08_gemma_causal_proposals.py) proposes direct ESG edges from variable descriptions and compares them with the algorithmic graphs.
-
-Examples:
+DECI ablation and Linux helper:
 
 ```powershell
-.\.venv\Scripts\python.exe 08_gemma_causal_proposals.py --backend ollama
-.\.venv\Scripts\python.exe 08_gemma_causal_proposals.py --backend google --api-key YOUR_KEY
+.\.venv\Scripts\python.exe run_all.py --only-deci --deci-ablation --dataset synthetic
+.\.venv\Scripts\python.exe run_all.py --only-deci --deci-selected-only --dataset real
 ```
 
-Tracked outputs include:
+For Linux/WSL:
 
-- [outputs/graphs/gemma_proposed_adjacency.csv](./outputs/graphs/gemma_proposed_adjacency.csv)
-- [outputs/graphs/gemma_proposed_edges.csv](./outputs/graphs/gemma_proposed_edges.csv)
-- [outputs/graphs/gemma_proposed_graph.gml](./outputs/graphs/gemma_proposed_graph.gml)
-- [reports/gemma_causal_reasoning.txt](./reports/gemma_causal_reasoning.txt)
+```bash
+bash run_deci_linux.sh
+```
 
-### 10. Qualitative Edge Evaluation
+## Final Result Tables
 
-[10_gemma_evaluate.py](./10_gemma_evaluate.py) evaluates discovered edges by asking Gemma for:
-
-- whether any causal link is plausible
-- the most plausible relationship direction
-- a short mechanism
-- likely confounders
-- confidence
-
-Examples:
+Generate thesis-ready consolidated tables:
 
 ```powershell
-.\.venv\Scripts\python.exe 10_gemma_evaluate.py --backend ollama
-.\.venv\Scripts\python.exe 10_gemma_evaluate.py --backend google --model gemma-4-26b-a4b-it --api-key YOUR_KEY
-.\.venv\Scripts\python.exe 10_gemma_evaluate.py --backend google --model gemma-4-26b-a4b-it --no-cache --delay 4.5 --max-edges 10
+.\.venv\Scripts\python.exe 20_create_final_result_tables.py
 ```
 
-If you prefer an environment variable for Google:
+Main outputs:
+
+```text
+outputs/experiments/final_algorithm_comparison_advisor_dummy.csv
+outputs/experiments/final_algorithm_comparison_advisor_dummy_sanity_check.csv
+outputs/experiments/final_algorithm_comparison_real_ecb.csv
+outputs/experiments/final_results_summary.md
+```
+
+Advisor dummy headline results, main `forbidden_only` comparison:
+
+```text
+PC:      violations 21.80 -> 0.00, F1 0.0127 -> 0.0552
+LiNGAM:  violations 0.80 -> 0.00, F1 0.0000 -> 0.0000
+NOTEARS: violations 0.00 -> 0.00, F1 0.0000 -> 0.0000
+GES:     violations 4.80 -> 0.00, F1 0.0105 -> 0.0110
+DECI:    violations 3.40 -> 0.00, F1 0.0180 -> 0.0110
+```
+
+Real ECB case-study headline results:
+
+```text
+PC:      alignment 0.000 -> 0.333, violations 0.333 -> 0.000
+LiNGAM:  alignment 0.400 -> 0.400, violations 0.200 -> 0.000
+NOTEARS: alignment 0.000 -> 0.000, violations 0.200 -> 0.000
+GES:     alignment 0.300 -> 0.400, violations 0.600 -> 0.000
+DECI:    alignment 0.000 -> 0.000, violations 0.000 -> 0.000
+```
+
+## Final Thesis Figures
+
+Generate final figures and captions:
 
 ```powershell
-$env:GEMINI_API_KEY="YOUR_KEY"
-.\.venv\Scripts\python.exe 10_gemma_evaluate.py --backend google --model gemma-4-26b-a4b-it
+.\.venv\Scripts\python.exe 09_make_final_figures.py
 ```
 
-Tracked evaluation outputs:
+Outputs:
 
-- [outputs/gemma_eval/edge_scores.csv](./outputs/gemma_eval/edge_scores.csv)
-- [outputs/gemma_eval/model_summary.csv](./outputs/gemma_eval/model_summary.csv)
-- [outputs/gemma_eval/raw_responses.jsonl](./outputs/gemma_eval/raw_responses.jsonl)
-- [outputs/gemma_eval/cache.json](./outputs/gemma_eval/cache.json)
-- [outputs/gemma_eval/comparison.png](./outputs/gemma_eval/comparison.png)
-- [outputs/gemma_eval/distribution.png](./outputs/gemma_eval/distribution.png)
+```text
+outputs/figures/pipeline_overview.png
+outputs/figures/constraint_pipeline.png
+outputs/figures/advisor_dummy_f1_forbidden_only.png
+outputs/figures/advisor_dummy_shd_forbidden_only.png
+outputs/figures/advisor_dummy_violations_forbidden_only.png
+outputs/figures/real_ecb_graph_selected.png
+outputs/figures/real_ecb_stability.png
+outputs/figures/full_reference_sanity_appendix.png
+outputs/figures/figure_captions.md
+```
 
-This step is intended as a supplementary plausibility check, not as ground truth.
+The selected real ECB case-study graph uses GES forbidden-only because PC
+graph CSVs were not available in `outputs/experiments/graphs/`.
 
-## Graphs, Figures, And Reports
+## Current Final Interpretation
 
-Regenerate report-quality figures at the default 300 DPI:
+The main result is constraint compliance: forbidden-only constraints eliminate
+or reduce ontology violations across the main algorithm set.
+
+The clearest advisor-dummy reference-DAG alignment improvement is PC:
+
+```text
+F1 0.0127 -> 0.0552
+SHD 127.60 -> 124.20
+violations 21.80 -> 0.00
+```
+
+GES is a useful classical score-based baseline. It improves constraint
+compliance, but reference-DAG F1 remains low, suggesting that the advisor
+dummy data may not contain strong statistical signal matching the
+ontology-derived reference DAG.
+
+DECI native constraints are promising in secondary and sanity-check settings,
+but DECI remains sensitive to data size, thresholding, and configuration. It
+is treated as exploratory rather than the main thesis claim.
+
+Real ECB results are case-study results only. The real dataset has no
+reference DAG, so the project does not report real-data F1 or SHD.
+
+## Project Layout
+
+```text
+go/
+|-- 05_build_reference_dag_from_dummy.py
+|-- 07_run_deci.py
+|-- 08_run_ges.py
+|-- 09_make_final_figures.py
+|-- 14_constraint_adapter.py
+|-- 20_create_final_result_tables.py
+|-- deci_ablation.py
+|-- run_all.py
+|-- run_deci_linux.sh
+|-- config.py
+|-- data/
+|   |-- advisor_dummy/
+|   |   |-- ESG-Finance_dummy_data.csv
+|   |   |-- ESG-Finance_Metadata.xlsx
+|   |   `-- Dummy_dataset_ESG.txt
+|   |-- processed/
+|   |   |-- advisor_dummy_ready.csv
+|   |   `-- data_ready.csv
+|   `-- synthetic/
+|-- outputs/
+|   |-- experiments/
+|   |-- figures/
+|   |-- graphs/
+|   `-- metrics/
+|-- reports/
+|-- docs/
+`-- scripts/
+```
+
+## Important Output Files
+
+Advisor dummy and reference-DAG artifacts:
+
+```text
+outputs/experiments/advisor_dummy_data_audit.csv
+outputs/experiments/advisor_dummy_metadata_registry.csv
+outputs/experiments/advisor_dummy_reference_dag_edges.csv
+outputs/experiments/advisor_dummy_reference_dag_validation.md
+outputs/experiments/advisor_dummy_constraint_ablation_summary.csv
+outputs/experiments/advisor_dummy_final_report.md
+```
+
+Final thesis artifacts:
+
+```text
+outputs/experiments/final_algorithm_comparison_advisor_dummy.csv
+outputs/experiments/final_algorithm_comparison_real_ecb.csv
+outputs/experiments/final_results_summary.md
+outputs/figures/figure_captions.md
+```
+
+DECI diagnostics:
+
+```text
+outputs/experiments/deci_diagnostics.csv
+outputs/experiments/deci_threshold_sweep.csv
+outputs/experiments/deci_stable_edges.csv
+outputs/experiments/deci_real_selected_config.csv
+outputs/experiments/deci_report.md
+```
+
+GES outputs:
+
+```text
+outputs/experiments/graphs/ges_<dataset>_<constraint_label>_seed<S>.csv
+outputs/experiments/ges_stable_edges.csv
+```
+
+Significance test outputs:
+
+```text
+outputs/experiments/significance_tests.csv
+outputs/experiments/significance_tests.md
+```
+
+SNR sensitivity sweep outputs:
+
+```text
+outputs/experiments/snr_sweep_results.csv
+outputs/figures/snr_f1_sweep.png
+outputs/figures/snr_shd_sweep.png
+```
+
+## Causal Dummy Dataset (v2)
+
+`generate_causal_dummy.py` generates `ESG-Finance_dummy_data_causal_v2.csv`:
+a version of the advisor dummy dataset where 46 variables are produced from
+structural causal equations that match the ontology-derived reference DAG.
+
+This is distinct from the original advisor CSV, which is randomly generated
+with no causal structure. The v2 dataset has a known ground-truth DAG, making
+F1 and SHD interpretable as causal recovery rather than ontology alignment.
 
 ```powershell
-.\.venv\Scripts\python.exe 09_visualize_graphs.py
+# Default: n=3000, seed=42, snr=0.6
+.\.venv\Scripts\python.exe generate_causal_dummy.py
+
+# Weaker signal (harder for algorithms)
+.\.venv\Scripts\python.exe generate_causal_dummy.py --snr 0.3
+
+# Without data quality injection (for controlled experiments)
+.\.venv\Scripts\python.exe generate_causal_dummy.py --snr 0.6
 ```
 
-Useful variants:
+Generated files:
+
+```text
+data/advisor_dummy/ESG-Finance_dummy_data_causal_v2.csv
+data/advisor_dummy/causal_dummy_ground_truth_dag.csv
+data/advisor_dummy/causal_dummy_ground_truth_edges.csv
+```
+
+## Statistical Significance Tests
+
+`21_significance_tests.py` runs one-sided paired Wilcoxon signed-rank tests
+on the advisor_dummy `forbidden_only` constraint condition. Tests whether
+constrained F1 > unconstrained F1 and constrained SHD < unconstrained SHD.
 
 ```powershell
-.\.venv\Scripts\python.exe 09_visualize_graphs.py --dpi 600
-.\.venv\Scripts\python.exe 09_visualize_graphs.py --top-n 25 --subgraphs
-.\.venv\Scripts\python.exe 09_visualize_graphs.py --skip-eda
+.\.venv\Scripts\python.exe 21_significance_tests.py
 ```
 
-Current tracked graph artifacts include:
+Key results (n=5 seeds, forbidden_only, advisor_dummy):
 
-- [outputs/graphs/unconstrained_pc_graph.gml](./outputs/graphs/unconstrained_pc_graph.gml)
-- [outputs/graphs/constrained_pc_graph.gml](./outputs/graphs/constrained_pc_graph.gml)
-- [outputs/graphs/unconstrained_lingam_graph.gml](./outputs/graphs/unconstrained_lingam_graph.gml)
-- [outputs/graphs/notears_graph.gml](./outputs/graphs/notears_graph.gml)
-- [outputs/graphs/deci_unconstrained_graph.gml](./outputs/graphs/deci_unconstrained_graph.gml)
-- [outputs/graphs/deci_constrained_graph.gml](./outputs/graphs/deci_constrained_graph.gml)
-- [outputs/graphs/gemma_proposed_graph.gml](./outputs/graphs/gemma_proposed_graph.gml)
+```text
+PC:     Delta F1 = +0.043, p = 0.031 *    Delta SHD = -3.4, p = 0.031 *
+GES:    Delta F1 = +0.000, p = n/a         Delta SHD = -4.8, p = 0.031 *
+LiNGAM: Delta F1 = 0.000, p = n/a         Delta SHD = -0.8, p = n/a
+NOTEARS: Delta F1 = 0.000, p = n/a        Delta SHD = 0.0,  p = n/a
+DECI:   Delta F1 = -0.007, p = 0.750      Delta SHD = +9.4, p = 0.844
+```
 
-Current tracked figures include:
+Note: with n=5, the minimum achievable p-value is 1/32 ≈ 0.031. PC and GES
+show statistically significant SHD improvement. LiNGAM and NOTEARS are
+untestable because all paired differences are zero (no signal in the data).
 
-- [outputs/figures/comparison_grid.png](./outputs/figures/comparison_grid.png)
-- [outputs/figures/correlation_heatmap.png](./outputs/figures/correlation_heatmap.png)
-- [outputs/figures/scatter_key_relationships.png](./outputs/figures/scatter_key_relationships.png)
-- [outputs/figures/jaccard_heatmap.png](./outputs/figures/jaccard_heatmap.png)
-- [outputs/figures/edge_count_comparison.png](./outputs/figures/edge_count_comparison.png)
-- [outputs/figures/constraint_impact.png](./outputs/figures/constraint_impact.png)
-- [outputs/figures/network_unconstrained_pc.png](./outputs/figures/network_unconstrained_pc.png)
-- [outputs/figures/network_constrained_pc.png](./outputs/figures/network_constrained_pc.png)
-- [outputs/figures/network_unconstrained_lingam.png](./outputs/figures/network_unconstrained_lingam.png)
-- [outputs/figures/network_notears.png](./outputs/figures/network_notears.png)
-- [outputs/figures/network_deci_unconstrained.png](./outputs/figures/network_deci_unconstrained.png)
-- [outputs/figures/network_deci_constrained.png](./outputs/figures/network_deci_constrained.png)
-- [outputs/figures/network_gemma_proposed.png](./outputs/figures/network_gemma_proposed.png)
+## SNR Sensitivity Sweep
 
-Reports and diagnostics:
+`22_snr_sensitivity_sweep.py` tests the thesis claim that ontology-guided
+constraints improve causal recovery more at low SNR than at high SNR. Uses
+the causal v2 data (known ground-truth DAG), no data quality injection.
 
-- [reports/audit_report.txt](./reports/audit_report.txt)
-- [reports/data_cleaning_summary.md](./reports/data_cleaning_summary.md)
-- [reports/high_correlation_pairs.csv](./reports/high_correlation_pairs.csv)
-- [reports/gemma_causal_reasoning.txt](./reports/gemma_causal_reasoning.txt)
-- [outputs/metrics/run_log.csv](./outputs/metrics/run_log.csv)
+```powershell
+# Full sweep (5 SNR values, 3 seeds, PC + LiNGAM + GES)
+.\.venv\Scripts\python.exe 22_snr_sensitivity_sweep.py
 
-## Supporting Files
+# Custom grid
+.\.venv\Scripts\python.exe 22_snr_sensitivity_sweep.py --snr-grid 0.2,0.5,0.8 --seeds 42,43
+```
 
-- [config.py](./config.py) is the single source of truth for default paths and output folders
-- [docs/WEEK2_README.md](./docs/WEEK2_README.md) keeps the archived week-2 notes inside `docs/`
-- [scripts/run_full_pipeline.ps1](./scripts/run_full_pipeline.ps1) is the quickest non-LLM rerun path
-- [setup_venv.ps1](./setup_venv.ps1) bootstraps the local environment
+Sweep results (mean F1, 3 seeds, known ground-truth DAG):
 
-## Notes And Current Limitations
+```text
+SNR   PC unconstrained  PC constrained  LiNGAM unc  LiNGAM con  GES unc  GES con
+0.2        0.176            0.692          0.661       0.706       0.534    0.606
+0.4        0.318            0.809          0.691       0.731       0.531    0.599
+0.6        0.424            0.836          0.609       0.649       0.523    0.582
+0.8        0.419            0.869          0.416       0.482       0.563    0.616
+1.0        0.501            0.895          0.436       0.506       0.561    0.617
+```
 
-- The Google Gemma backend requires `google-genai` and a valid API key
-- The Hugging Face backend is available for proposal generation in step 08, but not for step 10 evaluation
-- The FX-normalized workbook is currently a helper artifact; the main causal pipeline still defaults to the canonical raw workbook path from [config.py](./config.py)
-- LLM-generated proposal and evaluation outputs should be treated as supporting evidence, not definitive causal truth
+Constrained consistently outperforms unconstrained at all SNR levels for all
+three algorithms. The gap is largest at low SNR (PC: +0.516 at SNR=0.2) and
+narrows at high SNR (PC: +0.394 at SNR=1.0), supporting the thesis claim that
+constraints are most valuable in the low-data, high-noise ESG regime.
+
+## Thesis-Safe Wording
+
+Use:
+
+- ontology-derived reference DAG
+- reference-DAG alignment
+- ontology violations
+- constraint compliance
+- real-data case study
+
+Avoid stronger causal-recovery wording for advisor-dummy or real ECB results
+unless an explicit advisor-provided causal rule file is later added. In
+particular, do not describe real-data results with F1/SHD.
+
+## Notes And Limitations
+
+- The advisor dummy dataset is randomly generated with injected data quality
+  issues and no explicit causal equations. The reference DAG is reconstructed
+  from metadata and conservative ontology/domain rules. F1/SHD on this dataset
+  measure ontology alignment, not causal recovery.
+- The causal v2 dataset (generate_causal_dummy.py) has a known ground-truth DAG
+  and is the correct dataset for claiming causal structure recovery.
+- `full_reference_sanity` is useful only as a constraint-enforcement check.
+- NOTEARS and GES constrained variants are post-processed, not native
+  constraint-aware learning.
+- Real ECB has a small sample size and no reference graph. Results are
+  descriptive case-study evidence.
+- PC can fail on some real-data bootstrap seeds due to singular covariance in
+  Fisher-Z tests; failures are recorded rather than hidden.
+- Significance tests use n=5 seeds; the minimum achievable p-value is 0.031.
+  Results should be interpreted with this limitation in mind.
