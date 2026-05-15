@@ -1,340 +1,112 @@
 # Limitations To Review Before Submission
 
-This file tracks methodological shortcuts taken during development that need
-revisiting before thesis submission. Each entry: what was done, why it was a
-shortcut, what the rigorous alternative is, and a checkbox.
+This file tracks only unresolved methodological caveats that still need a
+submission decision. Resolved implementation notes and completed experiment
+tasks have been removed.
 
 ---
 
 ## 1. LLM-assisted ordinal coding of qualitative ESG disclosures
 
-**Date introduced:** 2026-05-04
 **Affected files:** data/processed/data_real_parsed.csv,
-                    reports/ordinal_parsing_unmapped.csv,
-                    reports/llm_scoring_log.csv
+reports/ordinal_parsing_unmapped.csv, reports/llm_scoring_log.csv
+
 **Affected columns:** emission_reduction_policy_score, health_safety_score,
-                      board_strategy_esg_oversight_score, reporting_quality_score
+board_strategy_esg_oversight_score, reporting_quality_score
 
-**What was done:** ~110 cells across 4 ordinal ESG columns could not be parsed
-by deterministic keyword matching (output of 02a). Instead of manually coding
-them, I used Gemma (via Google AI Studio API) with a fixed rubric to assign
-1-5 scores. Per-cell confidence is logged.
+**Current state:** Qualitative ESG cells that could not be parsed
+deterministically were scored with Gemma 3 27B using a fixed 1-5 rubric.
+All filled cells have confidence >= 0.7, but they have not been independently
+validated by a human coder.
 
-**Why this is a shortcut:** The thesis claims to use ontology-grounded,
-literature-derived methodology. Having an LLM score qualitative ESG
-disclosures introduces an additional AI-assisted step that has not been
-validated against human coders. A reviewer or examiner may reasonably ask
-why the qualitative data was scored by the same kind of model whose causal
-proposals the thesis is testing.
-
-**Rigorous alternative:** Manually code each unmapped cell using the rubric
-in this file (Appendix B in thesis). Estimated time: ~90 minutes for ~110
-cells. Recommended at minimum for low-confidence LLM scores
-(confidence < 0.7).
+**Remaining concern:** The real-data case study uses these ordinal columns, so
+the thesis should be transparent that this is an AI-assisted preprocessing
+step rather than fully manual coding.
 
 **Action before submission:**
-- [ ] Manually review all LLM scores with confidence < 0.7
-- [ ] Spot-check 20% of high-confidence scores against rubric
-- [ ] Document inter-rater agreement if a second coder is available
-- [ ] Update parsing_decisions.md to reflect final coding source
-- [ ] Add Appendix B to thesis showing the rubric and decision examples
-
-**Rubric used:**
-5 - Excellent / external verification / SBTi-validated / specific
-    quantified targets with audit
-4 - Very Good / documented commitment with structure / third-party verified /
-    GRI/TCFD aligned / specific numeric targets without independent verification
-3 - Good / documented framework without verification / general commitments
-    with some specificity
-2 - Moderate / adequate / generic descriptions of activity without commitment
-3
-1 - Limited / weak / vague mention only
-NaN - "Qualitative" alone with no further content; non-applicable
+- [ ] Spot-check at least 20% of the LLM-coded cells against the rubric
+- [ ] Manually review any values used in prominent case-study interpretation
+- [ ] Document the rubric and coding provenance in the methods or appendix
+- [ ] Add inter-rater agreement only if a second coder becomes available
 
 ---
 
-## 2. Locale-aware currency parsing
+## 2. Real-data parsing residuals
 
-**Date introduced:** 2026-05-04
-**Status:** Resolved, with residual warnings to review
 **Affected files:** data/processed/data_real_parsed.csv,
-                    reports/currency_parsing_warnings.csv,
-                    reports/currency_parsing_failures.csv,
-                    reports/revenue_parsing_comparison.csv
-**Affected columns:** community_investment_eur, green_financing_eur,
-                      total_revenue_eur
+data/processed/data_ready.csv, reports/currency_parsing_warnings.csv,
+reports/fx_conversions_applied.csv, reports/fx_unsupported_currencies.csv
 
-**What was done:** The deterministic currency parser was rewritten to handle
-both US/UK notation and European decimal notation. Ambiguous single-separator
-cases are resolved using suffix and magnitude reasonableness, and suspicious
-results are logged instead of silently corrected.
+**Current state:** Locale-aware currency parsing and single-date FX conversion
+are implemented and frozen for the experiment phase. The parser handled the
+mixed currency notation well enough for the real ECB case study, and remaining
+edge cases are now analysis/reporting caveats rather than parser bugs.
 
-**Why this was a shortcut:** The initial parser assumed dot/comma separators
-could be normalized with a simple rule. That was too weak for ECB bank reports,
-where EUR, USD, SEK, HUF, COP and local-language suffixes appear together.
-
-**Rigorous alternative:** Manually review every row in
-reports/currency_parsing_warnings.csv and convert non-EUR currencies using
-consistent exchange rates before final thesis submission.
-
-**Action before submission:**
-- [ ] Review all rows in reports/currency_parsing_warnings.csv
-- [ ] Decide whether non-EUR currency values need FX conversion or exclusion
-- [ ] Review reports/currency_parsing_failures.csv for qualitative placeholders
-- [ ] Confirm total_revenue_eur min/max are defensible for the ECB sample
-
-**Residual concern:** The parser now catches locale notation, but the source
-spreadsheet still mixes currencies and scale conventions. Rule 4 warnings
-should be reviewed before final submission.
-
----
-
-## 3. Single-date FX conversion
-
-**Date introduced:** 2026-05-04
-**Status:** Implemented, with review needed for unsupported or implicit
-currency labels
-**Affected files:** data/processed/data_real_parsed.csv,
-                    reports/fx_conversions_applied.csv,
-                    reports/fx_unsupported_currencies.csv,
-                    reports/currency_parsing_warnings.csv
-**Affected columns:** community_investment_eur, green_financing_eur,
-                      total_revenue_eur
-
-**What was done:** Non-EUR currency amounts detected in the raw spreadsheet
-are converted to EUR inside the parser using the most recent rate in
-exchange_rates/ecb_rates_2025.csv. Values without a currency token default
-to EUR; detected currencies missing from the FX file are mapped to NaN and
-logged.
-
-**Why this is a shortcut:** The conversion uses one ECB reference date for
-the full cross-sectional dataset rather than matching rates to each bank's
-reporting period. Some raw cells also use implicit or non-standard labels
-such as `Ps.` that are not covered by the explicit detection list.
-
-**Rigorous alternative:** Time-match FX rates to each bank's reporting period
-and manually review unsupported or implicit currency labels before final
-analysis.
+**Known residuals:**
+- 102/110 banks have valid total_revenue_eur; 8 rows remain NaN because of
+  unsupported COP values, failed parses, or deliberate exclusions.
+- The minimum valid revenue value, about 3.4M EUR, is implausibly small for an
+  ECB-supervised entity and should be verified or treated cautiously.
+- The maximum revenue value, about 724B EUR, is at the upper edge of
+  plausibility and may reflect a source-field mismatch such as assets reported
+  as revenue.
+- One ECB reference date is used for FX conversion across the cross-sectional
+  sample rather than matching rates to each bank's reporting period.
 
 **Action before submission:**
-- [ ] Review reports/fx_unsupported_currencies.csv
-- [ ] Review large revenue outliers in reports/currency_parsing_warnings.csv
-- [ ] Decide how to treat implicit currency labels such as `Ps.`
-- [ ] Document the FX reference date and limitation in the methods chapter
-
-**Residual concern:** Single-date FX conversion is acceptable for a
-cross-sectional sample, but it should be revisited if the analysis is
-extended to panel data with mixed reporting periods.
-
----
-## Real-data parsing — finalized [today's date]
-
-**Status:** Frozen. No further parser iteration before submission.
-
-**State at freeze:**
-- 102/110 banks have valid total_revenue_eur (8 NaN: COP unsupported,
-  failed parses, deliberate exclusions)
-- Revenue median: 3.07B EUR, max: 724B EUR, min: 3.4M EUR
-- 53 rows FX-converted from 7 currencies (USD, GBP, SEK, DKK, HUF, CZK, BGN)
-- 3 manual overrides applied for green_financing_eur (rows 63, 82, 102)
-- 6 rows in currency_parsing_warnings.csv reviewed and accepted as
-  legitimate large-bank values (rows 33, 43, 52, 66, 89, 101)
-- All ordinal qualitative scores filled by LLM with Gemma 3 27B,
-  confidence ≥ 0.7 on all 113 cells (see entry above for caveats)
-
-**Known residuals not addressed:**
-- Min revenue 3.4M EUR is implausibly small for an ECB-supervised entity;
-  likely a small investment vehicle in the sample. Verify or NaN before
-  final reporting.
-- Max revenue 724B EUR is at the upper edge of plausibility; if this
-  represents total assets mis-labeled as revenue in the source, real
-  revenue is likely ~70B EUR. Verify against bank's annual report.
-- Single-date FX rate (2025-12-31) applied to all rows regardless of
-  reporting period.
-
-**Decision rationale:** Further parser iteration produces diminishing
-returns. Remaining edge cases are best handled at analysis time
-(sensitivity analysis: re-run with these rows excluded) rather than at
-parse time. Synthetic-data experiments are the headline thesis result;
-real-data is the case study chapter.
+- [ ] Decide whether to leave the 3.4M EUR and 724B EUR rows in the real case
+      study or flag them in the narrative
+- [ ] Document the single-date FX choice as a cross-sectional simplification
+- [ ] Avoid making strong quantitative claims from real ECB magnitudes; use
+      the real dataset as a qualitative case study
 
 ---
 
-## 4. Synthetic DAG diagnostics use marginal correlations
+## 3. Paper inventory cleanup
 
-**Date introduced:** 2026-05-04
-**Status:** Needs improvement before final synthetic-results reporting
-**Affected files:** 12_generate_synthetic.py,
-                    13_check_synthetic_correlations.py,
-                    14_check_synthetic_ranges.py,
-                    reports/synthetic_generation_summary.md
+**Affected files:** paper_inverntory.md, archive/organize_papers.py,
+C:/Users/User/Desktop/Outline and Materials needed/
 
-**What was done:** A quick standalone diagnostic checks whether selected
-synthetic variable pairs have the expected positive, negative, or near-zero
-marginal Pearson correlations.
+**Current state:** The paper inventory was synced against the source PDF
+folder, duplicate downloads were treated as the same paper, and rows marked
+for removal were removed. The organizer helper has been archived with the
+other development utilities.
 
-**Additional range check:** 14_check_synthetic_ranges.py checks the three
-synthetic variables that previously had unrealistic maxima after exponenting
-linear combinations. On 2026-05-04, the N=2000 synthetic file passed:
-tobins_q max 7.39 below threshold 8, debt_to_equity_ratio max 20.09 below
-threshold 25, and corruption_cases max 31 below threshold 50.
-
-**Why this is a shortcut:** Marginal correlations do not distinguish direct
-edges from indirect paths or common-cause structure. A non-edge pair can look
-correlated even when the DAG is correct; for example,
-renewable_energy_share and corruption_cases share upstream governance/policy
-structure, so their marginal correlation is expected to be non-zero.
-
-**Rigorous alternative:** Replace the quick diagnostic with partial
-correlations or d-separation-aware checks using the known DAG. Non-edge
-pairs should be tested conditional on the appropriate separating set rather
-than judged only by marginal Pearson correlation.
+**Remaining concern:** Some paper classifications came from manual grouping
+notes rather than a fully audited metadata pass.
 
 **Action before submission:**
-- [ ] Replace marginal non-edge checks with partial-correlation checks
-- [ ] Use d-separation from the known synthetic DAG to choose test pairs
-- [ ] Document that indirect paths can create marginal association without
-      direct causal edges
-- [ ] Revisit fixed range thresholds after comparing synthetic distributions
-      against the final real-data sample
+- [ ] Fill any remaining blank classifications in paper_inverntory.md
+- [ ] Check that cited paper IDs in reports and tables resolve to the final
+      inventory
+- [ ] Keep the archived organizer as a utility only; do not describe it as
+      part of the thesis method
 
 ---
 
-## 5. Constraint adapter sanity check has empty inputs
+## 4. Runtime measurement limitations (RQ3)
 
-**Date introduced:** 2026-05-04
-**Status:** Waiting on finalized constraint CSVs and a pinned Causica runtime
-**Affected files:** 14_constraint_adapter.py,
-                    data/processed/forbidden_edges_draft.csv,
-                    data/processed/required_edges_draft.csv,
-                    data/processed/causica_constraint_matrix.npy
+**Current state:** Advisor-dummy runtime, causal-dummy runtime,
+sample-size scaling, SNR sensitivity, and DECI runtime breakdowns have now
+been consolidated in outputs/experiments/runtime_consolidated_report.md.
 
-**What happened:** Running `python 14_constraint_adapter.py` completed without
-crashing, but it loaded 0 forbidden and 0 required constraints because
-data/processed/forbidden_edges_draft.csv and
-data/processed/required_edges_draft.csv do not exist yet. causal-learn and
-gCastle formats were therefore tested only as empty 25x25 structures. Global
-Python does not have `causica` installed, but `.venv` does have Causica 0.4.5.
-Using `.venv`, the adapter now writes the real Causica constraint matrix to
-data/processed/causica_constraint_matrix.npy.
-
-**Real Causica API path found:** Causica 0.4.5 uses
-`causica.lightning.modules.deci_module.DECIModule`. Hard graph constraints
-are passed via the `constraint_matrix_path` argument, and `DECIModule` only
-loads `.npy` constraint matrices. The actual Causica convention is:
-`1 = required edge`, `0 = forbidden edge`, and `NaN = unconstrained`. This is
-different from the local fallback/gCastle convention of `1`, `-1`, and `0`.
-
-**Why this matters:** The adapter code path works, but this is not a real
-constraint-injection validation yet. It only proves that empty inputs are
-handled gracefully and that missing Causica raises a clear message instead of
-silently returning an invalid matrix. The full real `DECIModule` import is
-still blocked by dependency pinning: Causica 0.4.5 requires `torch==2.0.0`,
-`tensordict<0.2.0`, `numpy<2.0`, `pandas<2.0`, and `jsonargparse<4.21.0`.
-The current `.venv` has newer versions, producing an MRO error inside
-Causica's noise distributions.
-
-**Fix before full experiments:** Generate or finalize the draft constraint
-CSVs, then rerun `python 14_constraint_adapter.py` and confirm non-zero
-forbidden/required counts. For the actual Causica DECI path, use a separate
-pinned environment rather than downgrading the main project `.venv`.
-
-**Action before submission:**
-- [ ] Produce data/processed/forbidden_edges_draft.csv
-- [ ] Produce data/processed/required_edges_draft.csv
-- [ ] Rerun 14_constraint_adapter.py and record non-zero constraint counts
-- [ ] Create a separate `.venv_causica` with Causica 0.4.5's exact dependency
-      pins if the real DECIModule path is used
-- [ ] Pass data/processed/causica_constraint_matrix.npy to DECIModule through
-      `constraint_matrix_path`
-
----
-
-## 6. Pillar score smoke test
-
-**Date introduced:** 2026-05-04
-**Affected files:** 02d_check_pillar_scores.py,
-                    02d_describe_pillar_scores.py,
-                    data/processed/data_ready.csv,
-                    data/synthetic/synthetic_n110.csv,
-                    data/synthetic/synthetic_n500.csv,
-                    data/synthetic/synthetic_n2000.csv
-
-**What was done:** Added a small standalone smoke test that checks whether
-the real and synthetic datasets contain env_pillar_score, soc_pillar_score,
-gov_pillar_score, and overall_esg_score. Added a second quick script that
-prints descriptive statistics for the pillar scores in synthetic_n2000.csv.
-
-**Why this is a shortcut:** The script only verifies column presence and
-dataset shape. It does not validate the pillar-score formula, normalization,
-or whether the scores match the final thesis methodology.
-
-**Rigorous alternative:** Add formal tests for the pillar-score computation:
-known input rows, expected z-scores, expected min-max scaling, and expected
-overall ESG score.
-
-**Action before submission:**
-- [ ] Run 02d_check_pillar_scores.py after every pillar-score rebuild
-- [ ] Run 02d_describe_pillar_scores.py to inspect pillar-score ranges
-- [ ] Add formula-level tests once 02d_compute_pillar_scores.py is finalized
-
----
-
-## 7. Paper inventory cleanup and folder organization helper
-
-**Date introduced:** 2026-05-06
-**Affected files:** paper_inverntory.md,
-                    organize_papers.py,
-                    C:/Users/User/Desktop/Outline and Materials needed/
-
-**What was done:** The paper inventory was synced against the source PDF
-folder while treating duplicate download copies such as `(1)` and `(2)` as
-the same paper. Rows whose abstract contained `remove` were removed from the
-inventory, and the remaining IDs were renumbered sequentially. The current
-inventory has 147 rows. A helper script, `organize_papers.py`, was added to
-copy papers into classification folders by E, S, G, X, SKIP, or UNCLASSIFIED.
-
-**Why this is a shortcut:** Several classifications for newly added papers
-come from the manual grouping notes in the prompt rather than from a fully
-audited metadata source. The organizer script uses those mappings as
-supplemental classifications when the inventory cell is blank, but it does
-not modify the inventory itself.
-
-**Rigorous alternative:** Fill the `classification` column directly in
-`paper_inverntory.md` for every retained paper, then run the organizer using
-only inventory classifications. Review duplicate-copy groups manually before
-final archive cleanup.
-
-**Safety note:** `organize_papers.py` defaults to copy mode and does not
-delete source PDFs. Run `python organize_papers.py --dry-run` first, then run
-`python organize_papers.py` only after reviewing the planned folder routing.
-
-**Action before submission:**
-- [ ] Fill any remaining blank classifications in `paper_inverntory.md`
-- [ ] Run `python organize_papers.py --dry-run` and inspect unmatched files
-- [ ] Run `python organize_papers.py` only after the dry run looks correct
-- [ ] Review `organization_manifest.csv` after copying
-- [ ] Manually inspect each `group_*` folder before deleting or moving loose PDFs
-
----
-
-## Runtime measurement limitations (RQ3)
-
+**Remaining concerns:**
 - gCastle's NOTEARS caches optimization results across repeated calls on the
-  same data. Per-seed runtimes after the first call return cached results,
-  making naive mean-based runtime comparison unreliable for NOTEARS. The
-  23_runtime_analysis.py script now flags this via a coefficient-of-variation
-  check.
-- outputs/experiments/results.csv at the time of RQ3 analysis contains only
-  advisor_dummy rows. Real ECB (N=110) and causal_dummy_v2 (N=3000) runtime
-  measurements are absent. Future work: rerun those datasets and rebuild the
-  runtime comparison to verify whether the PC speedup pattern holds across
-  data scales.
-- Constraint-count sensitivity (runtime as a function of number of constraints
-  applied) was not measured. The PC speedup with the current constraint set
-  suggests this would be informative; left as future work.
-- DECI runtime is not directly comparable to other algorithms because DECI runs
-  on a different schedule (ablation grid + selected configurations) rather
-  than the standard seed loop. DECI runtime observations are documented
-  separately in deci_report.md and deci_diagnostics.csv rather than in
-  runtime_comparison.csv.
+  same data. The runtime scripts now flag this via coefficient-of-variation
+  diagnostics, but the NOTEARS mean runtime should still be interpreted
+  descriptively rather than as a clean repeated-fit estimate.
+- Real ECB runtime is formally persisted only for DECI. Classical algorithms
+  ran in under one second during execution, but those real-data runtime rows
+  were not persisted for formal aggregation.
+- Constraint-count sensitivity, meaning runtime as a function of the number of
+  constraints applied, was not measured. This remains future work.
+- DECI runtime is not directly comparable to PC, LiNGAM, NOTEARS, and GES
+  because it uses a different training schedule and threshold-dependent
+  configuration grid.
+
+**Action before submission:**
+- [ ] In the RQ3 text, cite the consolidated runtime report rather than the
+      older advisor-only runtime table
+- [ ] State that NOTEARS has a caching caveat
+- [ ] State that full real-data classical runtime aggregation and
+      constraint-count sensitivity are future-work items
