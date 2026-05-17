@@ -28,7 +28,7 @@ except Exception as e:
 PY
 
 echo "Running DECI ablation:"
-python run_all.py --only-deci --deci-ablation --dataset synthetic
+python scripts/experiments/run_all.py --only-deci --deci-ablation --dataset synthetic
 
 echo "Running full experiment:"
-python run_all.py
+python scripts/experiments/run_all.py

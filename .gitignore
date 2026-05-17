@@ -16,3 +16,8 @@ __pycache__/
 # Experiment scratch artifacts
 outputs/experiments/deci_work/
 outputs/metrics/deci_logs/
+
+# Local-only material
+archive/
+skill.md
+md/skill.md
